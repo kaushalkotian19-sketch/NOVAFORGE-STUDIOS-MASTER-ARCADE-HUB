@@ -1,0 +1,2050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NOVAFORGE STUDIOS // CYBER CHESS 3D: GRANDMASTER ROYALE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #040712;
+            --neon-cyan: #00f3ff;
+            --neon-pink: #ec4899;
+            --neon-gold: #fbbf24;
+            --neon-emerald: #10b981;
+        }
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            margin: 0;
+            padding: 0;
+        }
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+            font-family: 'Rajdhani', sans-serif;
+            color: #f8fafc;
+            touch-action: none;
+        }
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        #webglContainer {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Cyber Glass Panels & Buttons */
+        .cyber-panel {
+            background: rgba(8, 13, 28, 0.88);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(0, 243, 255, 0.32);
+            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.82), inset 0 0 16px rgba(0, 243, 255, 0.06);
+        }
+        .cyber-btn {
+            background: linear-gradient(135deg, rgba(0, 243, 255, 0.16) 0%, rgba(37, 99, 235, 0.3) 100%);
+            border: 1px solid rgba(0, 243, 255, 0.55);
+            box-shadow: 0 0 12px rgba(0, 243, 255, 0.18);
+            transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .cyber-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(0, 243, 255, 0.32) 0%, rgba(37, 99, 235, 0.48) 100%);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.45);
+            transform: translateY(-1px);
+        }
+        .cyber-btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+        .cyber-btn-gold {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.42) 100%);
+            border: 1px solid rgba(251, 191, 36, 0.82);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.25);
+            transition: all 0.16s ease;
+        }
+        .cyber-btn-gold:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.42) 0%, rgba(217, 119, 6, 0.6) 100%);
+            transform: translateY(-1px);
+        }
+        .cyber-btn-emerald {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.44) 100%);
+            border: 1px solid rgba(52, 211, 153, 0.85);
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
+            transition: all 0.16s ease;
+        }
+        .cyber-btn-emerald:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.44) 0%, rgba(5, 150, 105, 0.62) 100%);
+            transform: translateY(-1px);
+        }
+        .cyber-btn-magenta {
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.28) 0%, rgba(168, 85, 247, 0.45) 100%);
+            border: 1px solid rgba(244, 114, 182, 0.82);
+            box-shadow: 0 0 16px rgba(236, 72, 153, 0.28);
+            transition: all 0.16s ease;
+        }
+        .cyber-btn-magenta:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(236, 72, 153, 0.46) 0%, rgba(168, 85, 247, 0.62) 100%);
+            transform: translateY(-1px);
+        }
+
+        /* UPPER-LEFT DRAG-TO-PULL 2x3 RIBBON DRAWER */
+        #ribbonBackdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 5, 15, 0.58);
+            backdrop-filter: blur(2px);
+            z-index: 85;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        #ribbonBackdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #leftRibbonDrawer {
+            position: fixed;
+            top: 8px;
+            left: 0;
+            z-index: 90;
+            display: flex;
+            align-items: stretch;
+            max-width: calc(100vw - 10px);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translateX(calc(-100% + 40px));
+            filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.92));
+            will-change: transform;
+        }
+        #leftRibbonDrawer.dragging {
+            transition: none !important;
+        }
+        #leftRibbonDrawer.open {
+            transform: translateX(0);
+        }
+        .ribbon-tray {
+            background: rgba(8, 13, 27, 0.97);
+            backdrop-filter: blur(18px);
+            border-top: 1px solid rgba(0, 243, 255, 0.55);
+            border-bottom: 1px solid rgba(236, 72, 153, 0.55);
+            padding: 8px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            width: min(330px, calc(100vw - 54px));
+            box-shadow: inset 0 0 18px rgba(0, 243, 255, 0.08);
+        }
+        .ribbon-tray button {
+            width: 100%;
+            justify-content: center;
+            padding: 7px 5px;
+        }
+        .ribbon-pull-tab {
+            width: 40px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, rgba(0, 243, 255, 0.35) 0%, rgba(15, 23, 42, 0.98) 100%);
+            border: 1px solid rgba(0, 243, 255, 0.82);
+            border-left: 1px solid rgba(0, 243, 255, 0.25);
+            border-radius: 0 14px 14px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            cursor: grab;
+            padding: 8px 2px;
+            box-shadow: 4px 0 18px rgba(0, 243, 255, 0.32);
+            touch-action: none;
+        }
+        .ribbon-pull-tab:active {
+            cursor: grabbing;
+        }
+        .ribbon-grip-bars {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 1px;
+        }
+        .ribbon-grip-bars span {
+            width: 2px;
+            height: 10px;
+            border-radius: 1px;
+            background: rgba(0, 243, 255, 0.85);
+        }
+        .ribbon-chevron {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #leftRibbonDrawer.open .ribbon-chevron {
+            transform: rotate(180deg);
+        }
+
+        @keyframes checkPulse {
+            0%, 100% { box-shadow: 0 0 14px rgba(244, 63, 94, 0.45); }
+            50% { box-shadow: 0 0 28px rgba(244, 63, 94, 0.95); }
+        }
+        .check-alert-pulse {
+            animation: checkPulse 1s infinite;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(10, 15, 30, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 243, 255, 0.45);
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="select-none">
+
+    <!-- 3D WebGL Chessboard Container -->
+    <div id="webglContainer"></div>
+
+    <!-- Backdrop Dimmer for Upper-Left Pull Ribbon -->
+    <div id="ribbonBackdrop" aria-hidden="true"></div>
+
+    <!-- ========================================================================= -->
+    <!-- 1. UPPER-LEFT DRAG-TO-PULL 2x3 COMPACT RIBBON DRAWER (#leftRibbonDrawer)  -->
+    <!-- ========================================================================= -->
+    <div id="leftRibbonDrawer" aria-label="Quick Action Pull Ribbon">
+        <div class="ribbon-tray" id="ribbonTray">
+            <!-- 1. HOME -->
+            <button id="btnRibbonHome" class="cyber-btn-emerald rounded-xl text-[10px] sm:text-xs font-orbitron text-white font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🏠</span> <span>HOME</span>
+            </button>
+            <!-- 2. AI HINT -->
+            <button id="btnRibbonHint" class="cyber-btn-gold rounded-xl text-[10px] sm:text-xs font-orbitron text-white font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>💡</span> <span>AI HINT</span>
+            </button>
+            <!-- 3. UNDO MOVE -->
+            <button id="btnRibbonUndo" class="cyber-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-cyan-200 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>↩️</span> <span>UNDO</span>
+            </button>
+            <!-- 4. CAM VIEW -->
+            <button id="btnRibbonCam" class="cyber-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-cyan-200 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🎥</span> <span id="ribbonCamLabel">POV</span>
+            </button>
+            <!-- 5. NEW GAME -->
+            <button id="btnRibbonNew" class="cyber-btn-magenta rounded-xl text-[10px] sm:text-xs font-orbitron text-white font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🔄</span> <span>NEW GAME</span>
+            </button>
+            <!-- 6. SOUND -->
+            <button id="btnRibbonSound" class="cyber-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-amber-300 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span id="ribbonSoundIcon">🔊</span> <span id="ribbonSoundText">SOUND</span>
+            </button>
+        </div>
+
+        <button id="ribbonPullTab" class="ribbon-pull-tab" title="Drag/Pull Out or Tap to Toggle Menu">
+            <div class="ribbon-grip-bars"><span></span><span></span></div>
+            <span class="ribbon-chevron text-cyan-300 text-xs font-black leading-none">❯</span>
+            <span id="ribbonTabText" class="font-orbitron text-[8px] font-bold tracking-widest text-cyan-200 uppercase leading-none" style="writing-mode: vertical-rl; text-orientation: mixed;">PULL</span>
+        </button>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 2. HOME SCREEN GRANDMASTER LOBBY (#homeLobby) - Opens over 3D Turntable   -->
+    <!-- ========================================================================= -->
+    <div id="homeLobby" class="fixed inset-0 z-40 flex items-center justify-center p-2.5 sm:p-4 bg-[#040712]/70 backdrop-blur-md overflow-y-auto">
+        <div class="cyber-panel rounded-3xl p-4 sm:p-6 max-w-xl w-full border border-cyan-400/50 shadow-[0_0_60px_rgba(0,243,255,0.2)] my-auto flex flex-col gap-3 max-h-[95vh] overflow-y-auto">
+
+            <!-- Header & Daily Grant -->
+            <div class="flex items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+                <div>
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-950/90 border border-cyan-500/40 text-cyan-300 text-[9px] font-orbitron tracking-widest uppercase mb-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+                        NOVAFORGE STUDIOS // GAME #9
+                    </div>
+                    <h1 class="font-orbitron text-2xl sm:text-3xl font-black tracking-tight text-white leading-none">
+                        CYBER CHESS 3D
+                    </h1>
+                    <div class="font-orbitron text-xs font-bold tracking-[0.2em] text-pink-400 mt-0.5">
+                        GRANDMASTER ROYALE EDITION
+                    </div>
+                </div>
+
+                <button id="btnDailyGrant" class="cyber-btn-gold px-3 py-2 rounded-2xl font-orbitron text-[10px] font-black text-white flex flex-col items-center shrink-0">
+                    <span>🎁 +200 🪙</span>
+                    <span id="dailyGrantSub" class="text-[8px] text-amber-200 mt-0.5">DAILY GRANT</span>
+                </button>
+            </div>
+
+            <!-- Economy, ELO Rating & Wins Telemetry -->
+            <div class="grid grid-cols-4 gap-1.5 bg-slate-950/90 p-2.5 rounded-2xl border border-slate-800 text-center">
+                <div>
+                    <div class="text-[9px] text-slate-400 font-orbitron uppercase">NOVA-COINS</div>
+                    <div class="font-orbitron text-xs sm:text-sm font-black text-amber-400">🪙 <span id="lobCoins">400</span></div>
+                </div>
+                <div class="border-x border-slate-800">
+                    <div class="text-[9px] text-slate-400 font-orbitron uppercase">ELO RATING</div>
+                    <div class="font-orbitron text-xs sm:text-sm font-black text-cyan-300">🏆 <span id="lobElo">1200</span></div>
+                </div>
+                <div class="border-r border-slate-800">
+                    <div class="text-[9px] text-slate-400 font-orbitron uppercase">VICTORIES</div>
+                    <div class="font-orbitron text-xs sm:text-sm font-black text-emerald-400">⚔️ <span id="lobWins">0</span></div>
+                </div>
+                <div>
+                    <div class="text-[9px] text-slate-400 font-orbitron uppercase">PUZZLES</div>
+                    <div class="font-orbitron text-xs sm:text-sm font-black text-pink-400">🧩 <span id="lobPuzzles">0</span>/3</div>
+                </div>
+            </div>
+
+            <!-- 1. Game Mode & AI Difficulty Selector -->
+            <div>
+                <div class="text-[10px] font-orbitron font-bold uppercase tracking-wider text-cyan-300 mb-1.5">
+                    1. SELECT MATCH MODE &amp; AI ENGINE
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button data-mode="AI_1" class="mode-btn p-2 rounded-xl border border-slate-700 bg-slate-900/80 text-left">
+                        <div class="font-orbitron text-[10px] font-black text-emerald-300">⚡ ROOKIE AI</div>
+                        <div class="text-[10px] text-slate-300 mt-0.5">Depth-1 Fast Bot (ELO 950)</div>
+                    </button>
+                    <button data-mode="AI_2" class="mode-btn p-2 rounded-xl border-2 border-cyan-400 bg-cyan-950/40 text-left">
+                        <div class="font-orbitron text-[10px] font-black text-white">🧠 TACTICAL PRO</div>
+                        <div class="text-[10px] text-cyan-200 mt-0.5">Depth-2 Minimax (ELO 1350)</div>
+                    </button>
+                    <button data-mode="AI_3" class="mode-btn p-2 rounded-xl border border-slate-700 bg-slate-900/80 text-left">
+                        <div class="font-orbitron text-[10px] font-black text-amber-300">👑 GRANDMASTER</div>
+                        <div class="text-[10px] text-slate-300 mt-0.5">Depth-3 Alpha-Beta (ELO 1750)</div>
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 gap-2 mt-2">
+                    <button data-mode="PASS_2P" class="mode-btn p-2 rounded-xl border border-slate-700 bg-slate-900/80 text-left flex items-center justify-between">
+                        <div>
+                            <div class="font-orbitron text-[10px] font-black text-pink-300">👥 2P PASS &amp; PLAY</div>
+                            <div class="text-[10px] text-slate-300">Local 2-Player Tabletop</div>
+                        </div>
+                        <span class="text-lg">♟️</span>
+                    </button>
+                    <button data-mode="PUZZLE" class="mode-btn p-2 rounded-xl border border-slate-700 bg-slate-900/80 text-left flex items-center justify-between">
+                        <div>
+                            <div class="font-orbitron text-[10px] font-black text-amber-300">🧩 CHECKMATE BLITZ</div>
+                            <div class="text-[10px] text-slate-300">3 Tactical Mate Challenges</div>
+                        </div>
+                        <span class="text-lg">🔥</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. Time Control & 3D Piece Theme Customizer -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                    <div class="text-[10px] font-orbitron font-bold uppercase tracking-wider text-cyan-300 mb-1">
+                        2. CHESS CLOCK
+                    </div>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <button data-clock="300" class="clock-btn py-1.5 px-1 rounded-xl border border-slate-700 bg-slate-900 font-orbitron text-[9px] font-bold text-slate-300">⏱️ 5m BLITZ</button>
+                        <button data-clock="600" class="clock-btn py-1.5 px-1 rounded-xl border-2 border-cyan-400 bg-cyan-950/40 font-orbitron text-[9px] font-bold text-white">⚡ 10m RAPID</button>
+                        <button data-clock="0" class="clock-btn py-1.5 px-1 rounded-xl border border-slate-700 bg-slate-900 font-orbitron text-[9px] font-bold text-slate-300">♾️ UNTIMED</button>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="text-[10px] font-orbitron font-bold uppercase tracking-wider text-pink-300 mb-1">
+                        3. 3D PIECE &amp; BOARD SET
+                    </div>
+                    <div class="flex gap-1.5">
+                        <button id="btnCyclePieceSet" class="cyber-btn flex-1 py-1.5 px-2 rounded-xl font-orbitron text-[10px] font-bold text-white truncate">
+                            🎨 SET: NEON CYBER-GLASS
+                        </button>
+                        <button id="btnUnlockPieceSet" class="hidden cyber-btn-gold py-1.5 px-2.5 rounded-xl font-orbitron text-[10px] font-black text-white">
+                            🔓 250 🪙
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Launch Buttons -->
+            <div class="flex flex-col gap-2 pt-1">
+                <button id="btnResumeChess" class="hidden cyber-btn w-full py-2.5 rounded-2xl font-orbitron text-xs font-black text-cyan-200 items-center justify-center gap-2">
+                    <span>▶</span> <span>RESUME ACTIVE MATCH</span>
+                </button>
+                <button id="btnStartChess" class="cyber-btn-emerald w-full py-3.5 rounded-2xl font-orbitron text-sm sm:text-base font-black text-white flex items-center justify-center gap-2 shadow-xl">
+                    <span>♟️</span> <span id="startChessText">START GRANDMASTER MATCH</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 3. IN-GAME BROADCAST HUD (#chessHud)                                      -->
+    <!-- ========================================================================= -->
+    <div id="chessHud" class="fixed inset-0 z-10 pointer-events-none hidden flex-col justify-between p-2 sm:p-3">
+
+        <!-- TOP BAR: Opponent Profile, Material Advantage, Clock & Status Banner -->
+        <div class="w-full max-w-2xl mx-auto pl-10 flex flex-col gap-1.5 pointer-events-auto">
+            <div class="cyber-panel rounded-2xl px-3 py-1.5 flex items-center justify-between gap-2 border border-pink-500/40">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-pink-500/20 border border-pink-400/60 flex items-center justify-center text-lg">
+                        <span id="oppAvatar">🤖</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span id="oppName" class="font-orbitron text-xs sm:text-sm font-black text-white">TACTICAL PRO AI</span>
+                            <span id="oppMatAdv" class="text-[10px] font-orbitron font-bold text-pink-400"></span>
+                        </div>
+                        <div id="oppCapturedRow" class="text-xs text-pink-300 leading-none h-3.5 flex items-center gap-0.5"></div>
+                    </div>
+                </div>
+
+                <!-- Center Turn / Check Status Pill -->
+                <div id="turnStatusPill" class="px-3 py-1 rounded-full bg-slate-950/90 border border-cyan-400/50 font-orbitron text-[10px] sm:text-xs font-black text-cyan-300 text-center">
+                    WHITE TO MOVE
+                </div>
+
+                <!-- Opponent Clock -->
+                <div class="bg-slate-950/90 px-3 py-1 rounded-xl border border-slate-700 font-orbitron text-sm sm:text-base font-black text-pink-300" id="oppClock">
+                    10:00
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM BAR: Player Profile, Algebraic Move Log & Tactical Controls -->
+        <div class="w-full max-w-2xl mx-auto flex flex-col gap-1.5 pointer-events-auto">
+
+            <!-- Scrollable Algebraic Move Notation Strip -->
+            <div class="cyber-panel rounded-xl px-3 py-1 flex items-center justify-between gap-2 border border-slate-800">
+                <span class="font-orbitron text-[9px] text-slate-400 uppercase shrink-0">MOVES:</span>
+                <div id="moveHistoryStrip" class="flex-1 overflow-x-auto whitespace-nowrap text-xs font-mono text-cyan-200 flex items-center gap-2 py-0.5">
+                    <span class="text-slate-500 text-[11px]">Tap any White piece (Cyan) to view legal 3D moves...</span>
+                </div>
+            </div>
+
+            <!-- Player Info & Quick Action Buttons -->
+            <div class="cyber-panel rounded-2xl px-3 py-2 flex items-center justify-between gap-2 border border-cyan-500/40">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-400/60 flex items-center justify-center text-lg">
+                        <span>👑</span>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span id="plrName" class="font-orbitron text-xs sm:text-sm font-black text-white">COMMANDER (WHITE)</span>
+                            <span id="plrMatAdv" class="text-[10px] font-orbitron font-bold text-emerald-400"></span>
+                        </div>
+                        <div id="plrCapturedRow" class="text-xs text-cyan-300 leading-none h-3.5 flex items-center gap-0.5"></div>
+                    </div>
+                </div>
+
+                <!-- Quick Tactical Buttons -->
+                <div class="flex items-center gap-1.5">
+                    <button id="btnHudHint" class="cyber-btn-gold px-2.5 py-1.5 rounded-xl font-orbitron text-[10px] font-black text-white flex items-center gap-1" title="Highlight Best Move">
+                        <span>💡</span> <span class="hidden sm:inline">HINT</span>
+                    </button>
+                    <button id="btnHudUndo" class="cyber-btn px-2.5 py-1.5 rounded-xl font-orbitron text-[10px] font-black text-cyan-200 flex items-center gap-1" title="Undo Last Turn">
+                        <span>↩️</span> <span class="hidden sm:inline">UNDO</span>
+                    </button>
+                    <button id="btnHudCam" class="cyber-btn px-2.5 py-1.5 rounded-xl font-orbitron text-[10px] font-black text-cyan-200 flex items-center gap-1" title="Switch Camera View">
+                        <span>🎥</span> <span id="hudCamText">POV</span>
+                    </button>
+                </div>
+
+                <!-- Player Clock -->
+                <div class="bg-slate-950/90 px-3 py-1 rounded-xl border border-cyan-500/40 font-orbitron text-sm sm:text-base font-black text-cyan-300" id="plrClock">
+                    10:00
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 4. PAWN PROMOTION SELECTOR MODAL (#promoModal)                            -->
+    <!-- ========================================================================= -->
+    <div id="promoModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="cyber-panel rounded-3xl p-5 max-w-sm w-full text-center border border-amber-400/60">
+            <div class="text-[10px] font-orbitron text-amber-300 uppercase tracking-widest mb-1">PAWN REACHED 8TH RANK</div>
+            <h2 class="font-orbitron text-lg font-black text-white mb-3">SELECT PROMOTION PIECE</h2>
+            <div class="grid grid-cols-4 gap-2">
+                <button data-promo="q" class="promo-choice cyber-btn-gold py-3 rounded-2xl flex flex-col items-center gap-1">
+                    <span class="text-2xl">♛</span>
+                    <span class="font-orbitron text-[9px] font-bold text-white">QUEEN</span>
+                </button>
+                <button data-promo="r" class="promo-choice cyber-btn py-3 rounded-2xl flex flex-col items-center gap-1">
+                    <span class="text-2xl">♜</span>
+                    <span class="font-orbitron text-[9px] font-bold text-white">ROOK</span>
+                </button>
+                <button data-promo="b" class="promo-choice cyber-btn py-3 rounded-2xl flex flex-col items-center gap-1">
+                    <span class="text-2xl">♝</span>
+                    <span class="font-orbitron text-[9px] font-bold text-white">BISHOP</span>
+                </button>
+                <button data-promo="n" class="promo-choice cyber-btn py-3 rounded-2xl flex flex-col items-center gap-1">
+                    <span class="text-2xl">♞</span>
+                    <span class="font-orbitron text-[9px] font-bold text-white">KNIGHT</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 5. MATCH RESULT / CHECKMATE MODAL (#resultModal)                          -->
+    <!-- ========================================================================= -->
+    <div id="resultModal" class="fixed inset-0 bg-slate-950/88 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="cyber-panel rounded-3xl p-6 max-w-md w-full text-center border border-cyan-400/60">
+            <div id="resIcon" class="text-5xl mb-2">🏆</div>
+            <h2 id="resTitle" class="font-orbitron text-2xl font-black text-white mb-1">CHECKMATE!</h2>
+            <p id="resDesc" class="text-xs sm:text-sm text-slate-300 mb-5"></p>
+            <div class="flex gap-2.5">
+                <button id="btnResLobby" class="cyber-btn flex-1 py-3 rounded-xl font-orbitron text-xs font-bold text-cyan-200">
+                    🏠 LOBBY
+                </button>
+                <button id="btnResRematch" class="cyber-btn-emerald flex-1 py-3 rounded-xl font-orbitron text-xs font-bold text-white">
+                    🔄 REMATCH
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*******************************************************************************
+         * NOVAFORGE STUDIOS // CYBER CHESS 3D: GRANDMASTER ROYALE
+         * Complete Legal Chess Engine, Alpha-Beta AI, LatheGeometry 3D Pieces & Raycast
+         *******************************************************************************/
+
+        const SAVE_KEY = 'NOVAFORGE_CYBER_CHESS_3D_V1';
+
+        const PIECE_SETS = [
+            { id: 'cyber', name: 'NEON CYBER-GLASS', cost: 0, wCol: 0x00f3ff, wEmis: 0x006688, bCol: 0xff007f, bEmis: 0x660033, boardA: 0x0d172a, boardB: 0x1e293b },
+            { id: 'royal', name: 'ROYAL GOLD & OBSIDIAN', cost: 250, wCol: 0xffd700, wEmis: 0x664400, bCol: 0x1e1b4b, bEmis: 0x312e81, boardA: 0x1c1917, boardB: 0x292524 },
+            { id: 'plasma', name: 'PLASMA HOLOGRAM', cost: 250, wCol: 0x10b981, wEmis: 0x047857, bCol: 0xa855f7, bEmis: 0x581c87, boardA: 0x041814, boardB: 0x092620 },
+            { id: 'marble', name: 'CLASSIC GRANDMASTER', cost: 250, wCol: 0xf8fafc, wEmis: 0x334155, bCol: 0x334155, bEmis: 0x0f172a, boardA: 0x334155, boardB: 0x64748b }
+        ];
+
+        // 3 Famous Tactical Checkmate Puzzles
+        const TACTICAL_PUZZLES = [
+            {
+                title: 'PUZZLE 1: OPERA HOUSE MATE IN 1',
+                hint: 'Move Rook d1 to d8 (Rd8#) — protected by the Bishop on g5!',
+                // Custom board array: uppercase = White, lowercase = Black
+                grid: [
+                    ['r','n','b','.','k','b','.','r'],
+                    ['p','p','p','.','.','p','p','p'],
+                    ['.','.','.','.','p','.','.','.'],
+                    ['.','.','.','.','.','.','B','.'],
+                    ['.','.','.','P','n','.','.','.'],
+                    ['.','.','.','.','.','.','.','.'],
+                    ['P','P','P','.','.','P','P','P'],
+                    ['.','.','K','R','.','B','N','R']
+                ]
+            },
+            {
+                title: 'PUZZLE 2: BACK-RANK LASER STRIKE',
+                hint: 'Deliver Queen e1 to e8 (Qe8#) for an unstoppable back-rank checkmate!',
+                grid: [
+                    ['.','.','.','.','.','.','k','.'],
+                    ['.','.','.','.','.','p','p','p'],
+                    ['.','.','.','.','.','.','.','.'],
+                    ['.','.','.','.','.','.','.','.'],
+                    ['.','.','.','.','.','.','.','.'],
+                    ['.','.','.','.','.','.','.','.'],
+                    ['P','P','P','.','.','P','P','P'],
+                    ['.','.','.','.','Q','.','K','.']
+                ]
+            },
+            {
+                title: 'PUZZLE 3: SCHOLAR’S ROYAL MATING NET',
+                hint: 'Capture on f7 with the Queen (Qxf7#), supported by the Bishop on c4!',
+                grid: [
+                    ['r','.','b','q','k','b','n','r'],
+                    ['p','p','p','p','.','p','p','p'],
+                    ['.','.','n','.','.','.','.','.'],
+                    ['.','.','.','.','p','.','.','Q'],
+                    ['.','.','B','.','P','.','.','.'],
+                    ['.','.','.','.','.','.','.','.'],
+                    ['P','P','P','P','.','P','P','P'],
+                    ['R','N','B','.','K','.','N','R']
+                ]
+            }
+        ];
+
+        let profile = loadProfile();
+
+        function loadProfile() {
+            const def = {
+                coins: 400,
+                elo: 1200,
+                wins: 0,
+                puzzlesSolved: 0,
+                unlockedSets: ['cyber'],
+                activeSet: 'cyber',
+                selectedMode: 'AI_2',
+                clockSeconds: 600,
+                lastDaily: ''
+            };
+            try {
+                const raw = localStorage.getItem(SAVE_KEY);
+                return raw ? { ...def, ...JSON.parse(raw) } : def;
+            } catch (e) {
+                return def;
+            }
+        }
+
+        function saveProfile() {
+            try {
+                localStorage.setItem(SAVE_KEY, JSON.stringify(profile));
+            } catch (e) {}
+            updateLobbyUI();
+        }
+
+        // --- PROCEDURAL WEB AUDIO SYNTHESIZER ---
+        class ChessAudioSynth {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+            init() {
+                if (!this.ctx) {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    if (AC) this.ctx = new AC();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            }
+            toggleMute() {
+                this.muted = !this.muted;
+                return this.muted;
+            }
+            playMoveClick() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const g = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(520, now);
+                osc.frequency.exponentialRampToValueAtTime(240, now + 0.065);
+                g.gain.setValueAtTime(0.14, now);
+                g.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+                osc.connect(g);
+                g.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.07);
+            }
+            playCaptureBlast() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const g = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(360, now);
+                osc.frequency.exponentialRampToValueAtTime(68, now + 0.19);
+                g.gain.setValueAtTime(0.22, now);
+                g.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                osc.connect(g);
+                g.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+            playCheckAlarm() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                [660, 880].forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const g = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.09);
+                    g.gain.setValueAtTime(0.16, now + idx * 0.09);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.09 + 0.14);
+                    osc.connect(g);
+                    g.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.09);
+                    osc.stop(now + idx * 0.09 + 0.14);
+                });
+            }
+            playVictoryFanfare() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                [523.25, 659.25, 783.99, 1046.5].forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const g = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.075);
+                    g.gain.setValueAtTime(0.14, now + idx * 0.075);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.075 + 0.26);
+                    osc.connect(g);
+                    g.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.075);
+                    osc.stop(now + idx * 0.075 + 0.26);
+                });
+            }
+        }
+
+        const audio = new ChessAudioSynth();
+
+        // --- COMPLETE LEGAL CHESS RULES ENGINE & MINIMAX ALPHA-BETA AI ---
+        const PIECE_VALUES = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+        const UNICODE_PIECES = {
+            w: { k: '♔', q: '♕', r: '♖', b: '♗', n: '♘', p: '♙' },
+            b: { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' }
+        };
+
+        let chess = {
+            board: [], // 8x8 array of { type: 'p'|'r'|'n'|'b'|'q'|'k', color: 'w'|'b' } or null
+            turn: 'w',
+            castling: { wK: true, wQ: true, bK: true, bQ: true },
+            enPassant: null, // { r, c } target square
+            history: [],     // array of snapshots for Undo
+            moveLog: [],     // algebraic strings
+            capturedByWhite: [],
+            capturedByBlack: [],
+            whiteTime: 600,
+            blackTime: 600,
+            active: false,
+            inLobby: true,
+            puzzleIdx: 0,
+            selectedSq: null,
+            legalMovesForSelected: [],
+            hintMove: null,
+            pendingPromoMove: null
+        };
+
+        function createStandardBoard() {
+            const layout = [
+                ['r','n','b','q','k','b','n','r'],
+                ['p','p','p','p','p','p','p','p'],
+                ['.','.','.','.','.','.','.','.'],
+                ['.','.','.','.','.','.','.','.'],
+                ['.','.','.','.','.','.','.','.'],
+                ['.','.','.','.','.','.','.','.'],
+                ['P','P','P','P','P','P','P','P'],
+                ['R','N','B','Q','K','B','N','R']
+            ];
+            return parseGridToBoard(layout);
+        }
+
+        function parseGridToBoard(gridChars) {
+            const b = [];
+            for (let r = 0; r < 8; r++) {
+                b[r] = [];
+                for (let c = 0; c < 8; c++) {
+                    const ch = gridChars[r][c];
+                    if (ch === '.') {
+                        b[r][c] = null;
+                    } else {
+                        const isWhite = ch === ch.toUpperCase();
+                        b[r][c] = { type: ch.toLowerCase(), color: isWhite ? 'w' : 'b' };
+                    }
+                }
+            }
+            return b;
+        }
+
+        function cloneBoardState(b) {
+            return b.map(row => row.map(cell => cell ? { ...cell } : null));
+        }
+
+        function inBounds(r, c) {
+            return r >= 0 && r < 8 && c >= 0 && c < 8;
+        }
+
+        function findKingSquare(boardState, color) {
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = boardState[r][c];
+                    if (p && p.color === color && p.type === 'k') return { r, c };
+                }
+            }
+            return null;
+        }
+
+        function isSquareAttacked(boardState, targetR, targetC, attackerColor) {
+            // 1. Pawn attacks
+            const pawnDir = attackerColor === 'w' ? 1 : -1; // row where attacker pawn sits relative to target
+            for (const dc of [-1, 1]) {
+                const pr = targetR + pawnDir;
+                const pc = targetC + dc;
+                if (inBounds(pr, pc)) {
+                    const p = boardState[pr][pc];
+                    if (p && p.color === attackerColor && p.type === 'p') return true;
+                }
+            }
+
+            // 2. Knight jumps
+            const knightOffsets = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+            for (const [dr, dc] of knightOffsets) {
+                const nr = targetR + dr, nc = targetC + dc;
+                if (inBounds(nr, nc)) {
+                    const p = boardState[nr][nc];
+                    if (p && p.color === attackerColor && p.type === 'n') return true;
+                }
+            }
+
+            // 3. King adjacent
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    const kr = targetR + dr, kc = targetC + dc;
+                    if (inBounds(kr, kc)) {
+                        const p = boardState[kr][kc];
+                        if (p && p.color === attackerColor && p.type === 'k') return true;
+                    }
+                }
+            }
+
+            // 4. Orthogonal Rays (Rook / Queen)
+            const orthoDirs = [[-1,0],[1,0],[0,-1],[0,1]];
+            for (const [dr, dc] of orthoDirs) {
+                let nr = targetR + dr, nc = targetC + dc;
+                while (inBounds(nr, nc)) {
+                    const p = boardState[nr][nc];
+                    if (p) {
+                        if (p.color === attackerColor && (p.type === 'r' || p.type === 'q')) return true;
+                        break;
+                    }
+                    nr += dr; nc += dc;
+                }
+            }
+
+            // 5. Diagonal Rays (Bishop / Queen)
+            const diagDirs = [[-1,-1],[-1,1],[1,-1],[1,1]];
+            for (const [dr, dc] of diagDirs) {
+                let nr = targetR + dr, nc = targetC + dc;
+                while (inBounds(nr, nc)) {
+                    const p = boardState[nr][nc];
+                    if (p) {
+                        if (p.color === attackerColor && (p.type === 'b' || p.type === 'q')) return true;
+                        break;
+                    }
+                    nr += dr; nc += dc;
+                }
+            }
+
+            return false;
+        }
+
+        function isInCheck(boardState, color) {
+            const kSq = findKingSquare(boardState, color);
+            if (!kSq) return false;
+            return isSquareAttacked(boardState, kSq.r, kSq.c, color === 'w' ? 'b' : 'w');
+        }
+
+        function generatePseudoMoves(boardState, color, castlingRights, epTarget) {
+            const moves = [];
+            const enemy = color === 'w' ? 'b' : 'w';
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = boardState[r][c];
+                    if (!p || p.color !== color) continue;
+
+                    if (p.type === 'p') {
+                        const dir = color === 'w' ? -1 : 1;
+                        const startRank = color === 'w' ? 6 : 1;
+                        const promoRank = color === 'w' ? 0 : 7;
+
+                        // 1 step forward
+                        const r1 = r + dir;
+                        if (inBounds(r1, c) && !boardState[r1][c]) {
+                            moves.push({ fromR: r, fromC: c, toR: r1, toC: c, promo: r1 === promoRank ? 'q' : null });
+                            // 2 steps from start rank
+                            const r2 = r + dir * 2;
+                            if (r === startRank && !boardState[r2][c]) {
+                                moves.push({ fromR: r, fromC: c, toR: r2, toC: c, isDoublePawn: true });
+                            }
+                        }
+
+                        // Captures & En Passant
+                        for (const dc of [-1, 1]) {
+                            const tc = c + dc;
+                            if (!inBounds(r1, tc)) continue;
+                            const target = boardState[r1][tc];
+                            if (target && target.color === enemy) {
+                                moves.push({ fromR: r, fromC: c, toR: r1, toC: tc, capture: true, promo: r1 === promoRank ? 'q' : null });
+                            } else if (epTarget && epTarget.r === r1 && epTarget.c === tc) {
+                                moves.push({ fromR: r, fromC: c, toR: r1, toC: tc, capture: true, isEnPassant: true });
+                            }
+                        }
+                    } else if (p.type === 'n') {
+                        const jumps = [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+                        for (const [dr, dc] of jumps) {
+                            const nr = r + dr, nc = c + dc;
+                            if (!inBounds(nr, nc)) continue;
+                            const t = boardState[nr][nc];
+                            if (!t || t.color === enemy) {
+                                moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: Boolean(t) });
+                            }
+                        }
+                    } else if (p.type === 'k') {
+                        for (let dr = -1; dr <= 1; dr++) {
+                            for (let dc = -1; dc <= 1; dc++) {
+                                if (dr === 0 && dc === 0) continue;
+                                const nr = r + dr, nc = c + dc;
+                                if (!inBounds(nr, nc)) continue;
+                                const t = boardState[nr][nc];
+                                if (!t || t.color === enemy) {
+                                    moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: Boolean(t) });
+                                }
+                            }
+                        }
+
+                        // Castling
+                        if (castlingRights && !isInCheck(boardState, color)) {
+                            const rank = color === 'w' ? 7 : 0;
+                            if (r === rank && c === 4) {
+                                const canK = color === 'w' ? castlingRights.wK : castlingRights.bK;
+                                const canQ = color === 'w' ? castlingRights.wQ : castlingRights.bQ;
+                                if (canK && !boardState[rank][5] && !boardState[rank][6] &&
+                                    !isSquareAttacked(boardState, rank, 5, enemy) &&
+                                    !isSquareAttacked(boardState, rank, 6, enemy)) {
+                                    moves.push({ fromR: rank, fromC: 4, toR: rank, toC: 6, isCastle: 'K' });
+                                }
+                                if (canQ && !boardState[rank][3] && !boardState[rank][2] && !boardState[rank][1] &&
+                                    !isSquareAttacked(boardState, rank, 3, enemy) &&
+                                    !isSquareAttacked(boardState, rank, 2, enemy)) {
+                                    moves.push({ fromR: rank, fromC: 4, toR: rank, toC: 2, isCastle: 'Q' });
+                                }
+                            }
+                        }
+                    } else {
+                        // Sliding pieces: b, r, q
+                        const dirs = [];
+                        if (p.type === 'r' || p.type === 'q') dirs.push([-1,0],[1,0],[0,-1],[0,1]);
+                        if (p.type === 'b' || p.type === 'q') dirs.push([-1,-1],[-1,1],[1,-1],[1,1]);
+                        for (const [dr, dc] of dirs) {
+                            let nr = r + dr, nc = c + dc;
+                            while (inBounds(nr, nc)) {
+                                const t = boardState[nr][nc];
+                                if (!t) {
+                                    moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: false });
+                                } else {
+                                    if (t.color === enemy) {
+                                        moves.push({ fromR: r, fromC: c, toR: nr, toC: nc, capture: true });
+                                    }
+                                    break;
+                                }
+                                nr += dr; nc += dc;
+                            }
+                        }
+                    }
+                }
+            }
+            return moves;
+        }
+
+        function applyMoveOnBoard(boardState, move) {
+            const next = cloneBoardState(boardState);
+            const moving = next[move.fromR][move.fromC];
+            next[move.fromR][move.fromC] = null;
+
+            if (move.isEnPassant) {
+                const capR = moving.color === 'w' ? move.toR + 1 : move.toR - 1;
+                next[capR][move.toC] = null;
+            }
+            if (move.isCastle === 'K') {
+                next[move.toR][5] = next[move.toR][7];
+                next[move.toR][7] = null;
+            } else if (move.isCastle === 'Q') {
+                next[move.toR][3] = next[move.toR][0];
+                next[move.toR][0] = null;
+            }
+
+            next[move.toR][move.toC] = {
+                type: move.promo ? move.promo : moving.type,
+                color: moving.color
+            };
+            return next;
+        }
+
+        function generateLegalMoves(boardState, color, castlingRights, epTarget) {
+            const pseudo = generatePseudoMoves(boardState, color, castlingRights, epTarget);
+            return pseudo.filter(mv => {
+                const after = applyMoveOnBoard(boardState, mv);
+                return !isInCheck(after, color);
+            });
+        }
+
+        // Positional Evaluation for Minimax Alpha-Beta AI
+        function evaluateBoardPosition(boardState) {
+            let score = 0;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = boardState[r][c];
+                    if (!p) continue;
+                    let val = PIECE_VALUES[p.type] || 100;
+                    // Center control bonus
+                    const centerBonus = (3.5 - Math.abs(3.5 - c)) * 6 + (3.5 - Math.abs(3.5 - r)) * 6;
+                    val += centerBonus;
+                    if (p.type === 'p') {
+                        val += (p.color === 'w' ? (6 - r) : (r - 1)) * 12;
+                    }
+                    score += p.color === 'w' ? val : -val;
+                }
+            }
+            return score;
+        }
+
+        function findBestMoveAlphaBeta(boardState, color, depth, castlingRights, epTarget) {
+            const legal = generateLegalMoves(boardState, color, castlingRights, epTarget);
+            if (legal.length === 0) return null;
+
+            // Sort captures first for faster alpha-beta pruning
+            legal.sort((a, b) => (b.capture ? 1 : 0) - (a.capture ? 1 : 0));
+
+            let bestMove = legal[0];
+            let bestVal = color === 'w' ? -Infinity : Infinity;
+
+            for (const mv of legal) {
+                const nextB = applyMoveOnBoard(boardState, mv);
+                const val = minimaxSearch(nextB, depth - 1, -Infinity, Infinity, color === 'w' ? 'b' : 'w');
+                if (color === 'w' && val > bestVal) {
+                    bestVal = val;
+                    bestMove = mv;
+                } else if (color === 'b' && val < bestVal) {
+                    bestVal = val;
+                    bestMove = mv;
+                }
+            }
+            return bestMove;
+        }
+
+        function minimaxSearch(boardState, depth, alpha, beta, turnColor) {
+            if (depth <= 0) return evaluateBoardPosition(boardState);
+            const moves = generateLegalMoves(boardState, turnColor, null, null);
+            if (moves.length === 0) {
+                if (isInCheck(boardState, turnColor)) {
+                    return turnColor === 'w' ? -50000 - depth * 100 : 50000 + depth * 100;
+                }
+                return 0;
+            }
+
+            if (turnColor === 'w') {
+                let maxEval = -Infinity;
+                for (const mv of moves) {
+                    const ev = minimaxSearch(applyMoveOnBoard(boardState, mv), depth - 1, alpha, beta, 'b');
+                    maxEval = Math.max(maxEval, ev);
+                    alpha = Math.max(alpha, ev);
+                    if (beta <= alpha) break;
+                }
+                return maxEval;
+            } else {
+                let minEval = Infinity;
+                for (const mv of moves) {
+                    const ev = minimaxSearch(applyMoveOnBoard(boardState, mv), depth - 1, alpha, beta, 'w');
+                    minEval = Math.min(minEval, ev);
+                    beta = Math.min(beta, ev);
+                    if (beta <= alpha) break;
+                }
+                return minEval;
+            }
+        }
+
+        // --- THREE.JS 3D BOARD, SCULPTED CHESS PIECES & RAYCASTING ---
+        let scene, camera, renderer, raycaster, pointerNDC;
+        let boardRoot, piecesGroup, highlightsGroup, particlesGroup;
+        let squareMeshes = [];
+        let pieceMeshesMap = new Map(); // key "r,c" -> THREE.Group
+        let activeMoveAnim = null;
+        let shatterParticles = [];
+        let camPreset = 'POV'; // 'POV', 'TOP', 'ORBIT'
+
+        function sqToWorld(r, c) {
+            return { x: (c - 3.5) * 1.25, z: (r - 3.5) * 1.25 };
+        }
+
+        function getActiveSetSpec() {
+            return PIECE_SETS.find(s => s.id === profile.activeSet) || PIECE_SETS[0];
+        }
+
+        function initThreeChessScene() {
+            const container = document.getElementById('webglContainer');
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x040712);
+            scene.fog = new THREE.FogExp2(0x040712, 0.024);
+
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 150);
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            raycaster = new THREE.Raycaster();
+            pointerNDC = new THREE.Vector2();
+
+            // Studio Lighting
+            const hemi = new THREE.HemisphereLight(0xffffff, 0x0f172a, 0.9);
+            scene.add(hemi);
+
+            const dirLight = new THREE.DirectionalLight(0xe0f2fe, 1.35);
+            dirLight.position.set(10, 22, 12);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            scene.add(dirLight);
+
+            const rimLight = new THREE.PointLight(0xff007f, 1.1, 30);
+            rimLight.position.set(-10, 8, -10);
+            scene.add(rimLight);
+
+            boardRoot = new THREE.Group();
+            scene.add(boardRoot);
+
+            piecesGroup = new THREE.Group();
+            boardRoot.add(piecesGroup);
+
+            highlightsGroup = new THREE.Group();
+            boardRoot.add(highlightsGroup);
+
+            particlesGroup = new THREE.Group();
+            boardRoot.add(particlesGroup);
+
+            buildChessboard3D();
+        }
+
+        function buildChessboard3D() {
+            // Remove old board squares
+            squareMeshes.forEach(m => boardRoot.remove(m));
+            squareMeshes = [];
+
+            const setSpec = getActiveSetSpec();
+
+            // Outer Cyber Frame Pedestal
+            const frame = new THREE.Mesh(
+                new THREE.BoxGeometry(11.2, 0.42, 11.2),
+                new THREE.MeshStandardMaterial({ color: 0x070d1f, metalness: 0.85, roughness: 0.2 })
+            );
+            frame.position.y = -0.24;
+            frame.receiveShadow = true;
+            boardRoot.add(frame);
+            squareMeshes.push(frame);
+
+            const neonBorder = new THREE.Mesh(
+                new THREE.BoxGeometry(11.35, 0.08, 11.35),
+                new THREE.MeshBasicMaterial({ color: setSpec.wCol, wireframe: true })
+            );
+            neonBorder.position.y = -0.02;
+            boardRoot.add(neonBorder);
+            squareMeshes.push(neonBorder);
+
+            // 64 Interactive Raycast Squares
+            const sqGeo = new THREE.BoxGeometry(1.22, 0.14, 1.22);
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const isLight = (r + c) % 2 === 0;
+                    const mat = new THREE.MeshStandardMaterial({
+                        color: isLight ? setSpec.boardB : setSpec.boardA,
+                        metalness: 0.65,
+                        roughness: 0.25
+                    });
+                    const sq = new THREE.Mesh(sqGeo, mat);
+                    const pos = sqToWorld(r, c);
+                    sq.position.set(pos.x, -0.07, pos.z);
+                    sq.receiveShadow = true;
+                    sq.userData = { isSquare: true, r, c };
+                    boardRoot.add(sq);
+                    squareMeshes.push(sq);
+                }
+            }
+        }
+
+        // Build Sculpted 3D Chess Piece using LatheGeometry & Finials
+        function createSculptedPiece3D(type, color) {
+            const setSpec = getActiveSetSpec();
+            const isW = color === 'w';
+            const mainHex = isW ? setSpec.wCol : setSpec.bCol;
+            const emisHex = isW ? setSpec.wEmis : setSpec.bEmis;
+
+            const mat = new THREE.MeshStandardMaterial({
+                color: mainHex,
+                emissive: emisHex,
+                emissiveIntensity: 0.38,
+                metalness: 0.78,
+                roughness: 0.18
+            });
+            const ringMat = new THREE.MeshBasicMaterial({ color: mainHex });
+
+            const group = new THREE.Group();
+
+            // Glowing Base Pedestal Ring
+            const baseRing = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.025, 10, 24), ringMat);
+            baseRing.rotation.x = Math.PI / 2;
+            baseRing.position.y = 0.03;
+            group.add(baseRing);
+
+            // Lathe Profile Points per Piece Type
+            let pts = [];
+            if (type === 'p') {
+                pts = [[0,0],[0.38,0],[0.35,0.12],[0.22,0.22],[0.14,0.58],[0.24,0.65],[0.12,0.72],[0,0.72]];
+            } else if (type === 'r') {
+                pts = [[0,0],[0.42,0],[0.38,0.15],[0.26,0.25],[0.22,0.82],[0.34,0.92],[0.34,1.12],[0,1.12]];
+            } else if (type === 'n') {
+                pts = [[0,0],[0.42,0],[0.38,0.16],[0.26,0.28],[0.18,0.52],[0,0.52]];
+            } else if (type === 'b') {
+                pts = [[0,0],[0.42,0],[0.38,0.15],[0.24,0.26],[0.15,0.78],[0.26,0.86],[0.22,1.18],[0.08,1.34],[0,1.36]];
+            } else if (type === 'q') {
+                pts = [[0,0],[0.45,0],[0.40,0.16],[0.26,0.28],[0.16,0.92],[0.30,1.02],[0.24,1.35],[0.36,1.52],[0,1.50]];
+            } else {
+                // King
+                pts = [[0,0],[0.46,0],[0.42,0.18],[0.28,0.30],[0.18,0.98],[0.32,1.08],[0.26,1.46],[0.34,1.62],[0,1.62]];
+            }
+
+            const latheVecs = pts.map(([x, y]) => new THREE.Vector2(x, y));
+            const bodyMesh = new THREE.Mesh(new THREE.LatheGeometry(latheVecs, 20), mat);
+            bodyMesh.castShadow = true;
+            bodyMesh.receiveShadow = true;
+            group.add(bodyMesh);
+
+            // Distinct Top Finials
+            if (type === 'p') {
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.21, 16, 16), mat);
+                head.position.y = 0.88;
+                head.castShadow = true;
+                group.add(head);
+            } else if (type === 'r') {
+                // Crenellated Castle Battlements
+                for (let i = 0; i < 4; i++) {
+                    const a = (i / 4) * Math.PI * 2;
+                    const merlon = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.16, 0.14), mat);
+                    merlon.position.set(Math.cos(a) * 0.24, 1.18, Math.sin(a) * 0.24);
+                    group.add(merlon);
+                }
+            } else if (type === 'n') {
+                // Sculpted Cyber-Knight Horse Neck, Snout & Mane
+                const neck = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.58, 0.36), mat);
+                neck.position.set(0, 0.76, 0);
+                neck.rotation.x = isW ? -0.25 : 0.25;
+                neck.castShadow = true;
+                group.add(neck);
+
+                const snout = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.42), mat);
+                snout.position.set(0, 1.02, isW ? -0.16 : 0.16);
+                snout.rotation.x = isW ? 0.32 : -0.32;
+                group.add(snout);
+
+                const mane = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.52, 0.14), ringMat);
+                mane.position.set(0, 0.84, isW ? 0.18 : -0.18);
+                group.add(mane);
+            } else if (type === 'b') {
+                const orb = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 12), ringMat);
+                orb.position.y = 1.43;
+                group.add(orb);
+            } else if (type === 'q') {
+                const crownOrb = new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), ringMat);
+                crownOrb.position.y = 1.65;
+                group.add(crownOrb);
+            } else if (type === 'k') {
+                // Royal Cross Finial
+                const vBar = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.34, 0.10), ringMat);
+                vBar.position.y = 1.78;
+                const hBar = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.10, 0.10), ringMat);
+                hBar.position.y = 1.82;
+                group.add(vBar, hBar);
+            }
+
+            return group;
+        }
+
+        function syncPieces3DFromBoard() {
+            while (piecesGroup.children.length) piecesGroup.remove(piecesGroup.children[0]);
+            pieceMeshesMap.clear();
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = chess.board[r][c];
+                    if (!p) continue;
+                    const meshGroup = createSculptedPiece3D(p.type, p.color);
+                    const pos = sqToWorld(r, c);
+                    meshGroup.position.set(pos.x, 0, pos.z);
+                    meshGroup.userData = { isPiece: true, r, c, type: p.type, color: p.color };
+                    piecesGroup.add(meshGroup);
+                    pieceMeshesMap.set(`${r},${c}`, meshGroup);
+                }
+            }
+            renderHighlights3D();
+        }
+
+        function renderHighlights3D() {
+            while (highlightsGroup.children.length) highlightsGroup.remove(highlightsGroup.children[0]);
+
+            // 1. Highlight King in Check with Crimson Ring
+            if (isInCheck(chess.board, chess.turn)) {
+                const kSq = findKingSquare(chess.board, chess.turn);
+                if (kSq) {
+                    const pos = sqToWorld(kSq.r, kSq.c);
+                    const checkPad = new THREE.Mesh(
+                        new THREE.RingGeometry(0.42, 0.58, 24),
+                        new THREE.MeshBasicMaterial({ color: 0xf43f5e, side: THREE.DoubleSide })
+                    );
+                    checkPad.rotation.x = -Math.PI / 2;
+                    checkPad.position.set(pos.x, 0.02, pos.z);
+                    highlightsGroup.add(checkPad);
+                }
+            }
+
+            // 2. Highlight Hint Move if active
+            if (chess.hintMove) {
+                [
+                    { r: chess.hintMove.fromR, c: chess.hintMove.fromC },
+                    { r: chess.hintMove.toR, c: chess.hintMove.toC }
+                ].forEach(sq => {
+                    const pos = sqToWorld(sq.r, sq.c);
+                    const ring = new THREE.Mesh(
+                        new THREE.RingGeometry(0.40, 0.55, 24),
+                        new THREE.MeshBasicMaterial({ color: 0xfbbf24, side: THREE.DoubleSide })
+                    );
+                    ring.rotation.x = -Math.PI / 2;
+                    ring.position.set(pos.x, 0.025, pos.z);
+                    highlightsGroup.add(ring);
+                });
+            }
+
+            // 3. Highlight Selected Piece & Legal Destination Squares
+            if (chess.selectedSq) {
+                const selPos = sqToWorld(chess.selectedSq.r, chess.selectedSq.c);
+                const selRing = new THREE.Mesh(
+                    new THREE.RingGeometry(0.42, 0.56, 24),
+                    new THREE.MeshBasicMaterial({ color: 0x00f3ff, side: THREE.DoubleSide })
+                );
+                selRing.rotation.x = -Math.PI / 2;
+                selRing.position.set(selPos.x, 0.025, selPos.z);
+                highlightsGroup.add(selRing);
+
+                const selMesh = pieceMeshesMap.get(`${chess.selectedSq.r},${chess.selectedSq.c}`);
+                if (selMesh) selMesh.position.y = 0.22;
+
+                chess.legalMovesForSelected.forEach(mv => {
+                    const p = sqToWorld(mv.toR, mv.toC);
+                    const isSpecial = mv.isCastle || mv.promo;
+                    const col = mv.capture ? 0xf43f5e : (isSpecial ? 0xfbbf24 : 0x10b981);
+
+                    const marker = new THREE.Mesh(
+                        mv.capture
+                            ? new THREE.RingGeometry(0.38, 0.55, 24)
+                            : new THREE.CircleGeometry(0.24, 20),
+                        new THREE.MeshBasicMaterial({ color: col, side: THREE.DoubleSide, transparent: true, opacity: 0.88 })
+                    );
+                    marker.rotation.x = -Math.PI / 2;
+                    marker.position.set(p.x, 0.025, p.z);
+                    marker.userData = { isLegalTarget: true, move: mv };
+                    highlightsGroup.add(marker);
+                });
+            }
+        }
+
+        function spawnCaptureShatter3D(worldX, worldZ, hexColor) {
+            for (let i = 0; i < 22; i++) {
+                const geo = new THREE.OctahedronGeometry(0.08 + Math.random() * 0.08, 0);
+                const mat = new THREE.MeshBasicMaterial({ color: hexColor });
+                const m = new THREE.Mesh(geo, mat);
+                m.position.set(worldX, 0.5 + Math.random() * 0.5, worldZ);
+                const a = Math.random() * Math.PI * 2;
+                const spd = 1.5 + Math.random() * 3.5;
+                m.userData = {
+                    vx: Math.cos(a) * spd,
+                    vy: 2.5 + Math.random() * 3.2,
+                    vz: Math.sin(a) * spd,
+                    life: 1.0
+                };
+                particlesGroup.add(m);
+                shatterParticles.push(m);
+            }
+        }
+
+        // --- EXECUTING MOVES, PROMOTIONS & AI TURN ---
+        function selectSquare(r, c) {
+            if (!chess.active || chess.inLobby || activeMoveAnim || chess.pendingPromoMove) return;
+
+            // Check if user tapped a legal destination square for the currently selected piece
+            const chosenMove = chess.legalMovesForSelected.find(m => m.toR === r && m.toC === c);
+            if (chosenMove) {
+                const movingPiece = chess.board[chosenMove.fromR][chosenMove.fromC];
+                const isPawnPromo = movingPiece && movingPiece.type === 'p' && (chosenMove.toR === 0 || chosenMove.toR === 7);
+
+                if (isPawnPromo && chess.turn === 'w') {
+                    chess.pendingPromoMove = chosenMove;
+                    document.getElementById('promoModal').classList.remove('hidden');
+                    document.getElementById('promoModal').classList.add('flex');
+                    return;
+                }
+                executeChessMove(chosenMove);
+                return;
+            }
+
+            // Otherwise check if user tapped one of their own pieces
+            const isAIMode = profile.selectedMode.startsWith('AI_') || profile.selectedMode === 'PUZZLE';
+            if (isAIMode && chess.turn !== 'w') return;
+
+            const clickedPiece = chess.board[r][c];
+            if (clickedPiece && clickedPiece.color === chess.turn) {
+                audio.init();
+                audio.playMoveClick();
+                // Reset previous lifted piece height
+                pieceMeshesMap.forEach(m => { m.position.y = 0; });
+                chess.selectedSq = { r, c };
+                const allLegal = generateLegalMoves(chess.board, chess.turn, chess.castling, chess.enPassant);
+                chess.legalMovesForSelected = allLegal.filter(m => m.fromR === r && m.fromC === c);
+                renderHighlights3D();
+            } else {
+                pieceMeshesMap.forEach(m => { m.position.y = 0; });
+                chess.selectedSq = null;
+                chess.legalMovesForSelected = [];
+                renderHighlights3D();
+            }
+        }
+
+        function toAlgebraic(boardBefore, move, nextBoard, nextTurn) {
+            if (move.isCastle === 'K') return 'O-O';
+            if (move.isCastle === 'Q') return 'O-O-O';
+            const files = 'abcdefgh';
+            const p = boardBefore[move.fromR][move.fromC];
+            const pieceLetter = p.type === 'p' ? (move.capture ? files[move.fromC] : '') : p.type.toUpperCase();
+            const capSym = move.capture ? 'x' : '';
+            const dest = `${files[move.toC]}${8 - move.toR}`;
+            const promoStr = move.promo ? `=${move.promo.toUpperCase()}` : '';
+
+            const oppMoves = generateLegalMoves(nextBoard, nextTurn, chess.castling, chess.enPassant);
+            const inChk = isInCheck(nextBoard, nextTurn);
+            const suffix = inChk ? (oppMoves.length === 0 ? '#' : '+') : '';
+            return `${pieceLetter}${capSym}${dest}${promoStr}${suffix}`;
+        }
+
+        function executeChessMove(move) {
+            chess.hintMove = null;
+            chess.selectedSq = null;
+            chess.legalMovesForSelected = [];
+
+            // Save Snapshot for Undo
+            chess.history.push({
+                board: cloneBoardState(chess.board),
+                turn: chess.turn,
+                castling: { ...chess.castling },
+                enPassant: chess.enPassant ? { ...chess.enPassant } : null,
+                moveLog: [...chess.moveLog],
+                capturedByWhite: [...chess.capturedByWhite],
+                capturedByBlack: [...chess.capturedByBlack]
+            });
+
+            const movingPiece = chess.board[move.fromR][move.fromC];
+            const capturedPiece = move.isEnPassant
+                ? { type: 'p', color: movingPiece.color === 'w' ? 'b' : 'w' }
+                : chess.board[move.toR][move.toC];
+
+            if (capturedPiece) {
+                if (movingPiece.color === 'w') chess.capturedByWhite.push(capturedPiece.type);
+                else chess.capturedByBlack.push(capturedPiece.type);
+            }
+
+            const nextBoard = applyMoveOnBoard(chess.board, move);
+            const nextTurn = chess.turn === 'w' ? 'b' : 'w';
+            const notation = toAlgebraic(chess.board, move, nextBoard, nextTurn);
+
+            // Update Castling Rights
+            if (movingPiece.type === 'k') {
+                if (movingPiece.color === 'w') { chess.castling.wK = false; chess.castling.wQ = false; }
+                else { chess.castling.bK = false; chess.castling.bQ = false; }
+            }
+            if (move.fromR === 7 && move.fromC === 0) chess.castling.wQ = false;
+            if (move.fromR === 7 && move.fromC === 7) chess.castling.wK = false;
+            if (move.fromR === 0 && move.fromC === 0) chess.castling.bQ = false;
+            if (move.fromR === 0 && move.fromC === 7) chess.castling.bK = false;
+
+            // Update En Passant Target
+            chess.enPassant = move.isDoublePawn
+                ? { r: (move.fromR + move.toR) / 2, c: move.fromC }
+                : null;
+
+            // Animate 3D Piece Parabolic Leap
+            const mesh = pieceMeshesMap.get(`${move.fromR},${move.fromC}`);
+            const fromW = sqToWorld(move.fromR, move.fromC);
+            const toW = sqToWorld(move.toR, move.toC);
+
+            activeMoveAnim = {
+                mesh,
+                fromX: fromW.x,
+                fromZ: fromW.z,
+                toX: toW.x,
+                toZ: toW.z,
+                progress: 0,
+                duration: 0.24,
+                onComplete: () => {
+                    if (capturedPiece) {
+                        const setSpec = getActiveSetSpec();
+                        spawnCaptureShatter3D(toW.x, toW.z, capturedPiece.color === 'w' ? setSpec.wCol : setSpec.bCol);
+                        audio.playCaptureBlast();
+                    } else {
+                        audio.playMoveClick();
+                    }
+
+                    chess.board = nextBoard;
+                    chess.turn = nextTurn;
+                    chess.moveLog.push(notation);
+                    syncPieces3DFromBoard();
+                    updateChessHudUI();
+                    checkPostMoveState();
+                }
+            };
+        }
+
+        function checkPostMoveState() {
+            const legalNext = generateLegalMoves(chess.board, chess.turn, chess.castling, chess.enPassant);
+            const inChk = isInCheck(chess.board, chess.turn);
+
+            if (inChk) audio.playCheckAlarm();
+
+            if (legalNext.length === 0) {
+                chess.active = false;
+                if (inChk) {
+                    const winnerColor = chess.turn === 'w' ? 'b' : 'w';
+                    handleMatchConclusion(winnerColor, 'CHECKMATE');
+                } else {
+                    handleMatchConclusion('draw', 'STALEMATE DRAW');
+                }
+                return;
+            }
+
+            // If Puzzle Mode and White didn't deliver mate in 1
+            if (profile.selectedMode === 'PUZZLE' && chess.turn === 'b') {
+                showResultModal('🧩', 'PUZZLE FAILED', 'That move did not deliver immediate Checkmate! Tap Rematch to try the puzzle again or use 💡 AI HINT.');
+                chess.active = false;
+                return;
+            }
+
+            // Trigger AI Move if playing against AI and it's Black's turn
+            if (profile.selectedMode.startsWith('AI_') && chess.turn === 'b' && chess.active) {
+                const depth = profile.selectedMode === 'AI_1' ? 1 : (profile.selectedMode === 'AI_2' ? 2 : 3);
+                setTimeout(() => {
+                    if (!chess.active || chess.turn !== 'b') return;
+                    const aiMv = findBestMoveAlphaBeta(chess.board, 'b', depth, chess.castling, chess.enPassant);
+                    if (aiMv) executeChessMove(aiMv);
+                }, 380);
+            }
+        }
+
+        function handleMatchConclusion(winnerColor, reason) {
+            audio.playVictoryFanfare();
+            if (profile.selectedMode === 'PUZZLE' && winnerColor === 'w') {
+                profile.coins += 120;
+                profile.puzzlesSolved = Math.min(3, (profile.puzzlesSolved || 0) + 1);
+                chess.puzzleIdx = (chess.puzzleIdx + 1) % TACTICAL_PUZZLES.length;
+                saveProfile();
+                showResultModal('🧩', 'PUZZLE SOLVED!', `Brilliant Checkmate! +120 🪙 Nova-Coins credited. Ready for Puzzle #${chess.puzzleIdx + 1}?`);
+                return;
+            }
+
+            if (winnerColor === 'w') {
+                const eloGain = profile.selectedMode === 'AI_3' ? 35 : (profile.selectedMode === 'AI_2' ? 22 : 14);
+                const coinReward = profile.selectedMode === 'AI_3' ? 180 : 100;
+                profile.elo += eloGain;
+                profile.wins++;
+                profile.coins += coinReward;
+                saveProfile();
+                showResultModal('🏆', `${reason} — VICTORY!`, `You defeated the opponent! +${eloGain} ELO Rating & +${coinReward} 🪙 Nova-Coins earned.`);
+            } else if (winnerColor === 'b') {
+                profile.elo = Math.max(800, profile.elo - 12);
+                saveProfile();
+                showResultModal('⚔️', `${reason} — DEFEAT`, `Black victorious. Review the board or tap Rematch to reclaim your ELO!`);
+            } else {
+                profile.coins += 40;
+                saveProfile();
+                showResultModal('🤝', reason, `Balanced tactical battle! +40 🪙 Nova-Coins awarded.`);
+            }
+        }
+
+        function showResultModal(icon, title, desc) {
+            document.getElementById('resIcon').textContent = icon;
+            document.getElementById('resTitle').textContent = title;
+            document.getElementById('resDesc').textContent = desc;
+            document.getElementById('resultModal').classList.remove('hidden');
+            document.getElementById('resultModal').classList.add('flex');
+        }
+
+        // --- START NEW MATCH OR PUZZLE ---
+        function startNewChessMatch() {
+            chess.castling = { wK: true, wQ: true, bK: true, bQ: true };
+            chess.enPassant = null;
+            chess.history = [];
+            chess.moveLog = [];
+            chess.capturedByWhite = [];
+            chess.capturedByBlack = [];
+            chess.selectedSq = null;
+            chess.legalMovesForSelected = [];
+            chess.hintMove = null;
+            chess.pendingPromoMove = null;
+            chess.turn = 'w';
+            chess.whiteTime = profile.clockSeconds;
+            chess.blackTime = profile.clockSeconds;
+
+            if (profile.selectedMode === 'PUZZLE') {
+                const puz = TACTICAL_PUZZLES[chess.puzzleIdx % TACTICAL_PUZZLES.length];
+                chess.board = parseGridToBoard(puz.grid);
+                document.getElementById('oppName').textContent = puz.title;
+                document.getElementById('oppAvatar').textContent = '🧩';
+            } else {
+                chess.board = createStandardBoard();
+                const names = {
+                    AI_1: 'ROOKIE BOT (ELO 950)',
+                    AI_2: 'TACTICAL PRO AI (ELO 1350)',
+                    AI_3: 'GRANDMASTER CORE (ELO 1750)',
+                    PASS_2P: 'PLAYER 2 (BLACK)'
+                };
+                document.getElementById('oppName').textContent = names[profile.selectedMode] || 'CYBER AI';
+                document.getElementById('oppAvatar').textContent = profile.selectedMode === 'PASS_2P' ? '👤' : '🤖';
+            }
+
+            chess.active = true;
+            chess.inLobby = false;
+
+            document.getElementById('homeLobby').classList.add('hidden');
+            document.getElementById('resultModal').classList.add('hidden');
+            document.getElementById('resultModal').classList.remove('flex');
+            document.getElementById('chessHud').classList.remove('hidden');
+            document.getElementById('chessHud').classList.add('flex');
+
+            buildChessboard3D();
+            syncPieces3DFromBoard();
+            updateChessHudUI();
+        }
+
+        function formatClock(sec) {
+            if (profile.clockSeconds === 0) return '♾️';
+            const m = Math.floor(sec / 60);
+            const s = Math.floor(sec % 60);
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
+
+        function updateChessHudUI() {
+            const inChk = isInCheck(chess.board, chess.turn);
+            const pill = document.getElementById('turnStatusPill');
+            if (inChk) {
+                pill.textContent = `⚠️ ${chess.turn === 'w' ? 'WHITE' : 'BLACK'} IN CHECK!`;
+                pill.className = 'px-3 py-1 rounded-full bg-rose-950 border border-rose-500 font-orbitron text-[10px] sm:text-xs font-black text-rose-300 check-alert-pulse';
+            } else {
+                pill.textContent = chess.turn === 'w' ? 'WHITE TO MOVE' : 'BLACK TO MOVE';
+                pill.className = 'px-3 py-1 rounded-full bg-slate-950/90 border border-cyan-400/50 font-orbitron text-[10px] sm:text-xs font-black text-cyan-300';
+            }
+
+            document.getElementById('plrClock').textContent = formatClock(chess.whiteTime);
+            document.getElementById('oppClock').textContent = formatClock(chess.blackTime);
+
+            // Captured Pieces & Material Advantage
+            document.getElementById('plrCapturedRow').textContent = chess.capturedByWhite.map(t => UNICODE_PIECES.b[t]).join(' ');
+            document.getElementById('oppCapturedRow').textContent = chess.capturedByBlack.map(t => UNICODE_PIECES.w[t]).join(' ');
+
+            let wMat = 0, bMat = 0;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = chess.board[r][c];
+                    if (!p || p.type === 'k') continue;
+                    const v = Math.round(PIECE_VALUES[p.type] / 100);
+                    if (p.color === 'w') wMat += v; else bMat += v;
+                }
+            }
+            document.getElementById('plrMatAdv').textContent = wMat > bMat ? `+${wMat - bMat}` : '';
+            document.getElementById('oppMatAdv').textContent = bMat > wMat ? `+${bMat - wMat}` : '';
+
+            // Algebraic Move Log
+            const strip = document.getElementById('moveHistoryStrip');
+            if (chess.moveLog.length === 0) {
+                strip.innerHTML = `<span class="text-slate-500 text-[11px]">Tap any White piece (Cyan) to view legal 3D moves...</span>`;
+            } else {
+                let html = '';
+                for (let i = 0; i < chess.moveLog.length; i += 2) {
+                    const num = Math.floor(i / 2) + 1;
+                    const wMv = chess.moveLog[i];
+                    const bMv = chess.moveLog[i + 1] || '';
+                    html += `<span class="text-slate-400">${num}.</span><span class="text-white font-bold">${wMv}</span> <span class="text-pink-300">${bMv}</span> `;
+                }
+                strip.innerHTML = html;
+                strip.scrollLeft = strip.scrollWidth;
+            }
+        }
+
+        function updateLobbyUI() {
+            document.getElementById('lobCoins').textContent = profile.coins.toLocaleString();
+            document.getElementById('lobElo').textContent = profile.elo;
+            document.getElementById('lobWins').textContent = profile.wins;
+            document.getElementById('lobPuzzles').textContent = profile.puzzlesSolved || 0;
+
+            const setSpec = getActiveSetSpec();
+            const unlocked = profile.unlockedSets.includes(setSpec.id);
+            document.getElementById('btnCyclePieceSet').textContent = `🎨 ${setSpec.name}`;
+            const unlockBtn = document.getElementById('btnUnlockPieceSet');
+            unlockBtn.classList.toggle('hidden', unlocked);
+
+            const today = new Date().toDateString();
+            const claimed = profile.lastDaily === today;
+            const dBtn = document.getElementById('btnDailyGrant');
+            dBtn.disabled = claimed;
+            dBtn.style.opacity = claimed ? '0.5' : '1';
+            document.getElementById('dailyGrantSub').textContent = claimed ? 'CLAIMED' : 'DAILY GRANT';
+        }
+
+        // --- RAYCAST POINTER INTERACTION ON 3D CHESSBOARD ---
+        window.addEventListener('pointerdown', (e) => {
+            if (chess.inLobby || !chess.active) return;
+            // Ignore clicks on UI buttons/panels
+            if (e.target.closest('button') || e.target.closest('.cyber-panel') || e.target.closest('#leftRibbonDrawer')) return;
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            pointerNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            pointerNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(pointerNDC, camera);
+
+            // Check legal target markers, pieces, and squares
+            const targets = [...highlightsGroup.children, ...piecesGroup.children, ...squareMeshes];
+            const hits = raycaster.intersectObjects(targets, true);
+
+            for (const hit of hits) {
+                let obj = hit.object;
+                while (obj && !obj.userData.isSquare && !obj.userData.isPiece && !obj.userData.isLegalTarget) {
+                    obj = obj.parent;
+                }
+                if (!obj) continue;
+                if (obj.userData.isLegalTarget) {
+                    selectSquare(obj.userData.move.toR, obj.userData.move.toC);
+                    return;
+                }
+                if (obj.userData.isPiece || obj.userData.isSquare) {
+                    selectSquare(obj.userData.r, obj.userData.c);
+                    return;
+                }
+            }
+        });
+
+        // --- UPPER-LEFT DRAG-TO-PULL RIBBON DRAWER PHYSICS ---
+        const leftRibbonDrawer = document.getElementById('leftRibbonDrawer');
+        const ribbonTray = document.getElementById('ribbonTray');
+        const ribbonPullTab = document.getElementById('ribbonPullTab');
+        const ribbonTabText = document.getElementById('ribbonTabText');
+        const ribbonBackdrop = document.getElementById('ribbonBackdrop');
+
+        let ribbonOpen = false;
+        let isDraggingRibbon = false;
+        let dragMoved = false;
+        let dragStartX = 0;
+        let dragStartTranslate = 0;
+        let currentDragTranslate = 0;
+
+        function getClosedOffset() {
+            return -(ribbonTray ? ribbonTray.offsetWidth : 320);
+        }
+
+        function setRibbonOpen(state) {
+            ribbonOpen = Boolean(state);
+            leftRibbonDrawer.classList.remove('dragging');
+            leftRibbonDrawer.style.transform = '';
+            leftRibbonDrawer.classList.toggle('open', ribbonOpen);
+            ribbonBackdrop.classList.toggle('active', ribbonOpen);
+            ribbonTabText.textContent = ribbonOpen ? 'HIDE' : 'PULL';
+        }
+
+        ribbonPullTab.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            audio.init();
+            isDraggingRibbon = true;
+            dragMoved = false;
+            dragStartX = e.clientX;
+            const closedOffset = getClosedOffset();
+            dragStartTranslate = ribbonOpen ? 0 : closedOffset;
+            currentDragTranslate = dragStartTranslate;
+            leftRibbonDrawer.classList.add('dragging');
+            try { ribbonPullTab.setPointerCapture(e.pointerId); } catch (err) {}
+        });
+
+        ribbonPullTab.addEventListener('pointermove', (e) => {
+            if (!isDraggingRibbon) return;
+            const dx = e.clientX - dragStartX;
+            if (Math.abs(dx) > 5) dragMoved = true;
+            const closedOffset = getClosedOffset();
+            currentDragTranslate = Math.max(closedOffset, Math.min(0, dragStartTranslate + dx));
+            leftRibbonDrawer.style.transform = `translateX(${currentDragTranslate}px)`;
+        });
+
+        function finishRibbonDrag() {
+            if (!isDraggingRibbon) return;
+            isDraggingRibbon = false;
+            if (!dragMoved) {
+                audio.playMoveClick();
+                setRibbonOpen(!ribbonOpen);
+                return;
+            }
+            const closedOffset = getClosedOffset();
+            const threshold = ribbonOpen ? closedOffset * 0.28 : closedOffset * 0.68;
+            setRibbonOpen(currentDragTranslate > threshold);
+        }
+        ribbonPullTab.addEventListener('pointerup', finishRibbonDrag);
+        ribbonPullTab.addEventListener('pointercancel', finishRibbonDrag);
+        ribbonBackdrop.addEventListener('pointerdown', () => setRibbonOpen(false));
+
+        // --- UI & BUTTON BINDINGS ---
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                audio.init();
+                audio.playMoveClick();
+                profile.selectedMode = btn.getAttribute('data-mode');
+                document.querySelectorAll('.mode-btn').forEach(b => {
+                    const active = b.getAttribute('data-mode') === profile.selectedMode;
+                    b.classList.toggle('border-2', active);
+                    b.classList.toggle('border-cyan-400', active);
+                    b.classList.toggle('bg-cyan-950/40', active);
+                });
+                saveProfile();
+            });
+        });
+
+        document.querySelectorAll('.clock-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                audio.init();
+                audio.playMoveClick();
+                profile.clockSeconds = Number(btn.getAttribute('data-clock'));
+                document.querySelectorAll('.clock-btn').forEach(b => {
+                    const active = Number(b.getAttribute('data-clock')) === profile.clockSeconds;
+                    b.className = active
+                        ? 'clock-btn py-1.5 px-1 rounded-xl border-2 border-cyan-400 bg-cyan-950/40 font-orbitron text-[9px] font-bold text-white'
+                        : 'clock-btn py-1.5 px-1 rounded-xl border border-slate-700 bg-slate-900 font-orbitron text-[9px] font-bold text-slate-300';
+                });
+                saveProfile();
+            });
+        });
+
+        let previewSetIdx = 0;
+        document.getElementById('btnCyclePieceSet').addEventListener('click', () => {
+            previewSetIdx = (previewSetIdx + 1) % PIECE_SETS.length;
+            const s = PIECE_SETS[previewSetIdx];
+            profile.activeSet = s.id;
+            buildChessboard3D();
+            syncPieces3DFromBoard();
+            updateLobbyUI();
+        });
+
+        document.getElementById('btnUnlockPieceSet').addEventListener('click', () => {
+            const s = getActiveSetSpec();
+            if (profile.coins >= s.cost && !profile.unlockedSets.includes(s.id)) {
+                profile.coins -= s.cost;
+                profile.unlockedSets.push(s.id);
+                audio.playVictoryFanfare();
+                saveProfile();
+            }
+        });
+
+        document.getElementById('btnDailyGrant').addEventListener('click', () => {
+            audio.init();
+            const today = new Date().toDateString();
+            if (profile.lastDaily === today) return;
+            profile.lastDaily = today;
+            profile.coins += 200;
+            audio.playVictoryFanfare();
+            saveProfile();
+        });
+
+        document.getElementById('btnStartChess').addEventListener('click', () => {
+            audio.init();
+            if (!profile.unlockedSets.includes(profile.activeSet)) {
+                profile.activeSet = 'cyber';
+            }
+            startNewChessMatch();
+        });
+
+        document.getElementById('btnResumeChess').addEventListener('click', () => {
+            chess.inLobby = false;
+            document.getElementById('homeLobby').classList.add('hidden');
+        });
+
+        function openHomeLobby() {
+            setRibbonOpen(false);
+            chess.inLobby = true;
+            document.getElementById('homeLobby').classList.remove('hidden');
+            const resBtn = document.getElementById('btnResumeChess');
+            resBtn.classList.toggle('hidden', !chess.active);
+            resBtn.classList.toggle('flex', chess.active);
+            updateLobbyUI();
+        }
+
+        function triggerAIHint() {
+            setRibbonOpen(false);
+            if (!chess.active || chess.inLobby) return;
+            audio.init();
+            audio.playMoveClick();
+            const best = findBestMoveAlphaBeta(chess.board, chess.turn, 2, chess.castling, chess.enPassant);
+            if (best) {
+                chess.hintMove = best;
+                chess.selectedSq = { r: best.fromR, c: best.fromC };
+                chess.legalMovesForSelected = [best];
+                renderHighlights3D();
+            }
+        }
+
+        function triggerUndoMove() {
+            setRibbonOpen(false);
+            if (!chess.active || chess.history.length === 0 || activeMoveAnim) return;
+            audio.init();
+            audio.playMoveClick();
+            // Pop 2 plies if playing against AI so it returns to White's turn
+            const steps = (profile.selectedMode.startsWith('AI_') && chess.turn === 'w' && chess.history.length >= 2) ? 2 : 1;
+            let snap = null;
+            for (let i = 0; i < steps; i++) {
+                snap = chess.history.pop();
+            }
+            if (snap) {
+                chess.board = snap.board;
+                chess.turn = snap.turn;
+                chess.castling = snap.castling;
+                chess.enPassant = snap.enPassant;
+                chess.moveLog = snap.moveLog;
+                chess.capturedByWhite = snap.capturedByWhite;
+                chess.capturedByBlack = snap.capturedByBlack;
+                chess.selectedSq = null;
+                chess.legalMovesForSelected = [];
+                syncPieces3DFromBoard();
+                updateChessHudUI();
+            }
+        }
+
+        function cycleCameraAngle() {
+            const modes = ['POV', 'TOP', 'ORBIT'];
+            camPreset = modes[(modes.indexOf(camPreset) + 1) % modes.length];
+            document.getElementById('ribbonCamLabel').textContent = camPreset;
+            document.getElementById('hudCamText').textContent = camPreset;
+        }
+
+        document.getElementById('btnRibbonHome').addEventListener('click', openHomeLobby);
+        document.getElementById('btnRibbonHint').addEventListener('click', triggerAIHint);
+        document.getElementById('btnHudHint').addEventListener('click', triggerAIHint);
+        document.getElementById('btnRibbonUndo').addEventListener('click', triggerUndoMove);
+        document.getElementById('btnHudUndo').addEventListener('click', triggerUndoMove);
+        document.getElementById('btnRibbonCam').addEventListener('click', cycleCameraAngle);
+        document.getElementById('btnHudCam').addEventListener('click', cycleCameraAngle);
+        document.getElementById('btnRibbonNew').addEventListener('click', () => {
+            setRibbonOpen(false);
+            startNewChessMatch();
+        });
+        document.getElementById('btnRibbonSound').addEventListener('click', () => {
+            audio.init();
+            const m = audio.toggleMute();
+            document.getElementById('ribbonSoundIcon').textContent = m ? '🔇' : '🔊';
+            document.getElementById('ribbonSoundText').textContent = m ? 'MUTED' : 'SOUND';
+        });
+
+        document.querySelectorAll('.promo-choice').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const promoType = btn.getAttribute('data-promo');
+                document.getElementById('promoModal').classList.add('hidden');
+                document.getElementById('promoModal').classList.remove('flex');
+                if (chess.pendingPromoMove) {
+                    const mv = { ...chess.pendingPromoMove, promo: promoType };
+                    chess.pendingPromoMove = null;
+                    executeChessMove(mv);
+                }
+            });
+        });
+
+        document.getElementById('btnResLobby').addEventListener('click', () => {
+            document.getElementById('resultModal').classList.add('hidden');
+            document.getElementById('resultModal').classList.remove('flex');
+            openHomeLobby();
+        });
+        document.getElementById('btnResRematch').addEventListener('click', startNewChessMatch);
+
+        window.addEventListener('resize', () => {
+            if (!camera || !renderer) return;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- MAIN 60FPS ANIMATION & CLOCK LOOP ---
+        let lastTime = performance.now();
+
+        function animate(now) {
+            requestAnimationFrame(animate);
+            const dt = Math.min(0.05, (now - lastTime) / 1000);
+            lastTime = now;
+
+            // 1. Showroom Turntable Rotation in Lobby
+            if (chess.inLobby) {
+                boardRoot.rotation.y += dt * 0.35;
+                camera.position.set(0, 10.5, 13.5);
+                camera.lookAt(0, 0, 0);
+                renderer.render(scene, camera);
+                return;
+            }
+
+            boardRoot.rotation.y = 0;
+
+            // 2. Active Camera Angle Positioning
+            if (camPreset === 'POV') {
+                const zSide = (profile.selectedMode === 'PASS_2P' && chess.turn === 'b') ? -11.8 : 11.8;
+                camera.position.lerp(new THREE.Vector3(0, 9.6, zSide), dt * 5);
+                camera.lookAt(0, 0, 0);
+            } else if (camPreset === 'TOP') {
+                camera.position.lerp(new THREE.Vector3(0, 15.2, 0.01), dt * 5);
+                camera.lookAt(0, 0, 0);
+            } else {
+                const a = now * 0.00035;
+                camera.position.set(Math.sin(a) * 12.5, 9.5, Math.cos(a) * 12.5);
+                camera.lookAt(0, 0, 0);
+            }
+
+            // 3. Parabolic 3D Piece Move Animation
+            if (activeMoveAnim) {
+                activeMoveAnim.progress += dt / activeMoveAnim.duration;
+                const p = Math.min(1, activeMoveAnim.progress);
+                if (activeMoveAnim.mesh) {
+                    activeMoveAnim.mesh.position.x = activeMoveAnim.fromX + (activeMoveAnim.toX - activeMoveAnim.fromX) * p;
+                    activeMoveAnim.mesh.position.z = activeMoveAnim.fromZ + (activeMoveAnim.toZ - activeMoveAnim.fromZ) * p;
+                    activeMoveAnim.mesh.position.y = Math.sin(p * Math.PI) * 1.35;
+                }
+                if (p >= 1) {
+                    const cb = activeMoveAnim.onComplete;
+                    activeMoveAnim = null;
+                    cb();
+                }
+            }
+
+            // 4. Shatter Capture Particles
+            for (let i = shatterParticles.length - 1; i >= 0; i--) {
+                const sp = shatterParticles[i];
+                sp.position.x += sp.userData.vx * dt;
+                sp.position.y += sp.userData.vy * dt;
+                sp.position.z += sp.userData.vz * dt;
+                sp.userData.vy -= 9.8 * dt;
+                sp.userData.life -= dt * 1.8;
+                sp.scale.setScalar(Math.max(0.01, sp.userData.life));
+                if (sp.userData.life <= 0) {
+                    particlesGroup.remove(sp);
+                    shatterParticles.splice(i, 1);
+                }
+            }
+
+            // 5. Countdown Chess Clocks
+            if (chess.active && profile.clockSeconds > 0 && !activeMoveAnim) {
+                if (chess.turn === 'w') {
+                    chess.whiteTime = Math.max(0, chess.whiteTime - dt);
+                    if (chess.whiteTime <= 0) {
+                        chess.active = false;
+                        handleMatchConclusion('b', 'TIME OUT');
+                    }
+                } else {
+                    chess.blackTime = Math.max(0, chess.blackTime - dt);
+                    if (chess.blackTime <= 0) {
+                        chess.active = false;
+                        handleMatchConclusion('w', 'TIME OUT');
+                    }
+                }
+                document.getElementById('plrClock').textContent = formatClock(chess.whiteTime);
+                document.getElementById('oppClock').textContent = formatClock(chess.blackTime);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.onload = function () {
+            initThreeChessScene();
+            chess.board = createStandardBoard();
+            syncPieces3DFromBoard();
+            updateLobbyUI();
+            requestAnimationFrame(animate);
+        };
+    </script>
+</body>
+</html>
