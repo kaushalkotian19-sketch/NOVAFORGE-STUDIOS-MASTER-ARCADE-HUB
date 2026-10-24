@@ -1,0 +1,2166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NOVA LUDO: CYBER ROYALE | NovaForge Studios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #050814;
+            font-family: 'Rajdhani', sans-serif;
+            color: #e2e8f0;
+            touch-action: manipulation;
+        }
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .cyber-panel {
+            background: rgba(9, 14, 28, 0.92);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(0, 243, 255, 0.28);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.78), inset 0 0 14px rgba(0, 243, 255, 0.06);
+        }
+        .cyber-btn {
+            background: linear-gradient(135deg, rgba(0, 243, 255, 0.16) 0%, rgba(0, 110, 255, 0.28) 100%);
+            border: 1px solid rgba(0, 243, 255, 0.55);
+            box-shadow: 0 0 12px rgba(0, 243, 255, 0.18);
+            transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .cyber-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(0, 243, 255, 0.32) 0%, rgba(0, 140, 255, 0.45) 100%);
+            box-shadow: 0 0 18px rgba(0, 243, 255, 0.45);
+            transform: translateY(-1px);
+        }
+        .cyber-btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+        .cyber-btn-gold {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.24) 0%, rgba(217, 119, 6, 0.38) 100%);
+            border: 1px solid rgba(251, 191, 36, 0.75);
+            box-shadow: 0 0 14px rgba(245, 158, 11, 0.25);
+            transition: all 0.16s ease;
+        }
+        .cyber-btn-gold:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.4) 0%, rgba(217, 119, 6, 0.56) 100%);
+            box-shadow: 0 0 22px rgba(251, 191, 36, 0.55);
+            transform: translateY(-1px);
+        }
+        .cyber-btn-emerald {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.24) 0%, rgba(5, 150, 105, 0.38) 100%);
+            border: 1px solid rgba(52, 211, 153, 0.75);
+            box-shadow: 0 0 14px rgba(16, 185, 129, 0.25);
+            transition: all 0.16s ease;
+        }
+        .cyber-btn-emerald:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.4) 0%, rgba(5, 150, 105, 0.56) 100%);
+            box-shadow: 0 0 22px rgba(52, 211, 153, 0.55);
+            transform: translateY(-1px);
+        }
+        .scanlines {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0, 0, 0, 0.18) 50%,
+                rgba(0, 0, 0, 0.18)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        /* LEFT-TOP SWIPEABLE & DRAG-TO-PULL CYBER RIBBON DRAWER */
+        #ribbonBackdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(3, 6, 16, 0.52);
+            backdrop-filter: blur(2px);
+            z-index: 75;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        #ribbonBackdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #leftRibbonDrawer {
+            position: fixed;
+            top: 8px;
+            left: 0;
+            z-index: 80;
+            display: flex;
+            align-items: stretch;
+            max-width: calc(100vw - 10px);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translateX(calc(-100% + 40px));
+            filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.9));
+            will-change: transform;
+        }
+        #leftRibbonDrawer.dragging {
+            transition: none !important;
+        }
+        #leftRibbonDrawer.open {
+            transform: translateX(0);
+        }
+        .ribbon-tray {
+            background: rgba(8, 13, 26, 0.97);
+            backdrop-filter: blur(18px);
+            border-top: 1px solid rgba(0, 243, 255, 0.5);
+            border-bottom: 1px solid rgba(0, 243, 255, 0.5);
+            padding: 8px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            width: min(320px, calc(100vw - 54px));
+            box-shadow: inset 0 0 18px rgba(0, 243, 255, 0.08);
+        }
+        .ribbon-tray button {
+            width: 100%;
+            justify-content: center;
+            padding: 7px 6px;
+        }
+        .ribbon-pull-tab {
+            width: 40px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, rgba(0, 243, 255, 0.3) 0%, rgba(15, 23, 42, 0.98) 100%);
+            border: 1px solid rgba(0, 243, 255, 0.75);
+            border-left: 1px solid rgba(0, 243, 255, 0.25);
+            border-radius: 0 14px 14px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            cursor: grab;
+            padding: 8px 2px;
+            box-shadow: 4px 0 18px rgba(0, 243, 255, 0.3);
+            transition: background 0.2s ease, box-shadow 0.2s ease;
+            touch-action: none;
+        }
+        .ribbon-pull-tab:active {
+            cursor: grabbing;
+        }
+        .ribbon-pull-tab:hover {
+            background: linear-gradient(135deg, rgba(0, 243, 255, 0.46) 0%, rgba(30, 41, 59, 0.99) 100%);
+            box-shadow: 6px 0 24px rgba(0, 243, 255, 0.5);
+        }
+        .ribbon-grip-bars {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 1px;
+        }
+        .ribbon-grip-bars span {
+            width: 2px;
+            height: 10px;
+            border-radius: 1px;
+            background: rgba(0, 243, 255, 0.7);
+        }
+        .ribbon-chevron {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #leftRibbonDrawer.open .ribbon-chevron {
+            transform: rotate(180deg);
+        }
+
+        /* TRUE 3D CSS CUBE DIE */
+        .scene-3d {
+            width: 58px;
+            height: 58px;
+            perspective: 400px;
+            cursor: pointer;
+        }
+        .cube-3d {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.58s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+        .cube-face {
+            position: absolute;
+            width: 58px;
+            height: 58px;
+            background: radial-gradient(circle at center, rgba(15, 23, 42, 0.96) 0%, rgba(7, 11, 22, 0.99) 100%);
+            border: 2px solid var(--dice-color, #00f3ff);
+            border-radius: 12px;
+            box-shadow: 0 0 14px var(--dice-glow, rgba(0, 243, 255, 0.45)), inset 0 0 10px rgba(255, 255, 255, 0.08);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 8px;
+            gap: 3px;
+            backface-visibility: hidden;
+        }
+        .pip {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--pip-color, #fbbf24);
+            box-shadow: 0 0 8px var(--pip-color, #fbbf24);
+            place-self: center;
+        }
+        .face-1 { transform: rotateY(0deg) translateZ(29px); }
+        .face-2 { transform: rotateY(180deg) translateZ(29px); }
+        .face-3 { transform: rotateY(90deg) translateZ(29px); }
+        .face-4 { transform: rotateY(-90deg) translateZ(29px); }
+        .face-5 { transform: rotateX(90deg) translateZ(29px); }
+        .face-6 { transform: rotateX(-90deg) translateZ(29px); }
+
+        /* LOBBY SHOWCASE SPINNING 3D CUBE */
+        @keyframes spinHeroCube {
+            0% { transform: rotateX(-18deg) rotateY(0deg) rotateZ(4deg); }
+            50% { transform: rotateX(22deg) rotateY(180deg) rotateZ(-4deg); }
+            100% { transform: rotateX(-18deg) rotateY(360deg) rotateZ(4deg); }
+        }
+        .hero-cube-spin {
+            animation: spinHeroCube 9s linear infinite;
+        }
+
+        /* Floating Emote Speech Bubble */
+        @keyframes floatBubble {
+            0% { opacity: 0; transform: translateY(10px) scale(0.8); }
+            15% { opacity: 1; transform: translateY(0px) scale(1.04); }
+            80% { opacity: 1; transform: translateY(-4px) scale(1); }
+            100% { opacity: 0; transform: translateY(-14px) scale(0.9); }
+        }
+        .emote-bubble {
+            animation: floatBubble 2.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="flex flex-col justify-between select-none pt-1 pb-1.5 px-2">
+
+    <!-- Subtle Scanline CRT Overlay -->
+    <div class="fixed inset-0 scanlines z-30 opacity-25"></div>
+
+    <!-- Tap-Outside Dimmer Backdrop when Ribbon is Pulled Open -->
+    <div id="ribbonBackdrop" aria-hidden="true"></div>
+
+    <!-- ========================================================================= -->
+    <!-- HOME SCREEN LOBBY (#homeScreenLobby) - Opens First on Launch              -->
+    <!-- ========================================================================= -->
+    <div id="homeScreenLobby" class="fixed inset-0 z-40 flex items-center justify-center p-2.5 sm:p-4 bg-[#050814]/90 backdrop-blur-xl overflow-y-auto">
+        <div class="cyber-panel rounded-3xl p-4 sm:p-6 max-w-xl w-full border border-cyan-400/45 shadow-[0_0_50px_rgba(0,243,255,0.16)] my-auto flex flex-col gap-3.5">
+
+            <!-- 1. Studio Header + Rotating 3D Showcase Cube -->
+            <div class="flex items-center justify-between gap-3 border-b border-slate-800/90 pb-3">
+                <div class="min-w-0">
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-cyan-950/90 border border-cyan-500/40 text-cyan-300 text-[9px] sm:text-[10px] font-orbitron tracking-widest uppercase mb-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+                        NOVAFORGE STUDIOS
+                    </div>
+                    <h1 class="font-orbitron text-2xl sm:text-3xl font-black tracking-tight text-white leading-none">
+                        NOVA LUDO
+                    </h1>
+                    <div class="font-orbitron text-xs sm:text-sm font-bold tracking-[0.22em] text-amber-400 mt-0.5">
+                        CYBER ROYALE
+                    </div>
+                </div>
+
+                <!-- 3D Showcase Hero Die -->
+                <div class="scene-3d shrink-0 mr-1" id="lobbyShowcaseScene" title="Tap to Spin 3D Die">
+                    <div class="cube-3d hero-cube-spin" style="--dice-color: #00f3ff; --dice-glow: rgba(0,243,255,0.5);">
+                        <div class="cube-face face-1"><span class="pip" style="grid-area: 2 / 2;"></span></div>
+                        <div class="cube-face face-2"><span class="pip" style="grid-area: 1 / 1;"></span><span class="pip" style="grid-area: 3 / 3;"></span></div>
+                        <div class="cube-face face-3"><span class="pip" style="grid-area: 1 / 1;"></span><span class="pip" style="grid-area: 2 / 2;"></span><span class="pip" style="grid-area: 3 / 3;"></span></div>
+                        <div class="cube-face face-4"><span class="pip" style="grid-area: 1 / 1;"></span><span class="pip" style="grid-area: 1 / 3;"></span><span class="pip" style="grid-area: 3 / 1;"></span><span class="pip" style="grid-area: 3 / 3;"></span></div>
+                        <div class="cube-face face-5"><span class="pip" style="grid-area: 1 / 1;"></span><span class="pip" style="grid-area: 1 / 3;"></span><span class="pip" style="grid-area: 2 / 2;"></span><span class="pip" style="grid-area: 3 / 1;"></span><span class="pip" style="grid-area: 3 / 3;"></span></div>
+                        <div class="cube-face face-6"><span class="pip" style="grid-area: 1 / 1;"></span><span class="pip" style="grid-area: 1 / 3;"></span><span class="pip" style="grid-area: 2 / 1;"></span><span class="pip" style="grid-area: 2 / 3;"></span><span class="pip" style="grid-area: 3 / 1;"></span><span class="pip" style="grid-area: 3 / 3;"></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Cyber-Coins + Career Stats Bar + Daily Bonus -->
+            <div class="grid grid-cols-4 gap-1.5 bg-slate-950/80 p-2.5 rounded-2xl border border-slate-800 items-center text-center">
+                <div>
+                    <div class="text-[9px] text-slate-400 uppercase font-orbitron">COINS</div>
+                    <div class="font-orbitron text-xs sm:text-sm font-black text-amber-400">🪙 <span id="lobbyCoins">250</span></div>
+                </div>
+                <div class="border-x border-slate-800/90">
+                    <div class="text-[9px] text-slate-400 uppercase font-orbitron">VICTORIES</div>
+                    <div class="font-orbitron text-xs sm:text-sm font-black text-cyan-300">🏆 <span id="lobbyWins">0</span></div>
+                </div>
+                <div class="border-r border-slate-800/90">
+                    <div class="text-[9px] text-slate-400 uppercase font-orbitron">CROWNS / CUTS</div>
+                    <div class="font-orbitron text-xs sm:text-sm font-black text-fuchsia-300">👑<span id="lobbyCrowns">0</span> ⚔<span id="lobbyCuts">0</span></div>
+                </div>
+                <div class="pl-1">
+                    <button id="btnDailyBonus" class="cyber-btn-gold w-full py-1.5 px-1.5 rounded-xl font-orbitron text-[9px] sm:text-[10px] font-bold text-white leading-tight">
+                        🎁 +100 🪙<br><span id="dailyBonusSub" class="text-[8px] text-amber-200">CLAIM DAILY</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3. Game Mode Selector Cards -->
+            <div>
+                <div class="text-[10px] font-orbitron font-bold uppercase tracking-wider text-cyan-300 mb-1.5">
+                    1. SELECT ARENA MODE
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                    <button id="cardModeClassic" class="text-left p-2.5 rounded-2xl border-2 border-cyan-400 bg-cyan-950/35 transition-all">
+                        <div class="flex items-center justify-between mb-0.5">
+                            <span class="font-orbitron text-xs sm:text-sm font-black text-white">👑 CLASSIC ROYALE</span>
+                            <span id="badgeClassic" class="px-1.5 py-0.5 rounded bg-cyan-400 text-slate-950 font-orbitron text-[8px] font-black">ACTIVE</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-tight">All 4 tokens in base. Crown all 4 tokens to triumph.</p>
+                    </button>
+
+                    <button id="cardModeRush" class="text-left p-2.5 rounded-2xl border border-slate-700 bg-slate-900/60 transition-all">
+                        <div class="flex items-center justify-between mb-0.5">
+                            <span class="font-orbitron text-xs sm:text-sm font-black text-amber-300">⚡ QUICK RUSH</span>
+                            <span id="badgeRush" class="hidden px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 font-orbitron text-[8px] font-black">ACTIVE</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 leading-tight">1 token pre-deployed on start square! First to 2 Crowns wins.</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4. Quick Match Presets & Faction Seat Configurator -->
+            <div>
+                <div class="flex flex-wrap items-center justify-between gap-1 mb-1.5">
+                    <span class="text-[10px] font-orbitron font-bold uppercase tracking-wider text-cyan-300">
+                        2. FACTION SEATS &amp; PRESETS
+                    </span>
+                    <div class="flex gap-1">
+                        <button data-preset="1v3" class="preset-btn px-2 py-0.5 rounded-lg bg-cyan-500/20 border border-cyan-400/50 font-orbitron text-[9px] font-bold text-cyan-200 hover:bg-cyan-500/35">
+                            1v3 AI ROYALE
+                        </button>
+                        <button data-preset="1v1" class="preset-btn px-2 py-0.5 rounded-lg bg-amber-500/20 border border-amber-400/50 font-orbitron text-[9px] font-bold text-amber-200 hover:bg-amber-500/35">
+                            1v1 CYBER DUEL
+                        </button>
+                        <button data-preset="4p" class="preset-btn px-2 py-0.5 rounded-lg bg-fuchsia-500/20 border border-fuchsia-400/50 font-orbitron text-[9px] font-bold text-fuchsia-200 hover:bg-fuchsia-500/35">
+                            4P PASS &amp; PLAY
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 4 Faction Toggle Buttons -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <!-- Crimson -->
+                    <button data-lobby-seat="0" class="lobby-seat-btn p-2 rounded-xl bg-rose-950/40 border border-rose-500/50 flex flex-col items-center gap-1">
+                        <div class="flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                            <span class="font-orbitron text-[10px] font-bold text-rose-300">CRIMSON</span>
+                        </div>
+                        <span id="lobbySeatLabel-0" class="px-2 py-0.5 rounded bg-rose-500/30 border border-rose-400/50 font-orbitron text-[9px] font-bold text-white">HUMAN</span>
+                    </button>
+
+                    <!-- Emerald -->
+                    <button data-lobby-seat="1" class="lobby-seat-btn p-2 rounded-xl bg-emerald-950/40 border border-emerald-500/50 flex flex-col items-center gap-1">
+                        <div class="flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                            <span class="font-orbitron text-[10px] font-bold text-emerald-300">EMERALD</span>
+                        </div>
+                        <span id="lobbySeatLabel-1" class="px-2 py-0.5 rounded bg-emerald-500/30 border border-emerald-400/50 font-orbitron text-[9px] font-bold text-white">SMART AI</span>
+                    </button>
+
+                    <!-- Solar -->
+                    <button data-lobby-seat="2" class="lobby-seat-btn p-2 rounded-xl bg-amber-950/40 border border-amber-500/50 flex flex-col items-center gap-1">
+                        <div class="flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                            <span class="font-orbitron text-[10px] font-bold text-amber-300">SOLAR</span>
+                        </div>
+                        <span id="lobbySeatLabel-2" class="px-2 py-0.5 rounded bg-amber-500/30 border border-amber-400/50 font-orbitron text-[9px] font-bold text-white">SMART AI</span>
+                    </button>
+
+                    <!-- Cobalt -->
+                    <button data-lobby-seat="3" class="lobby-seat-btn p-2 rounded-xl bg-cyan-950/40 border border-cyan-500/50 flex flex-col items-center gap-1">
+                        <div class="flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+                            <span class="font-orbitron text-[10px] font-bold text-cyan-300">COBALT</span>
+                        </div>
+                        <span id="lobbySeatLabel-3" class="px-2 py-0.5 rounded bg-cyan-500/30 border border-cyan-400/50 font-orbitron text-[9px] font-bold text-white">SMART AI</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 5. Launch, Resume & Quick Shop / Audio Actions -->
+            <div class="flex flex-col gap-2 pt-1">
+                <!-- Conditional Resume Match Button (Visible when returning from an active board) -->
+                <button id="btnResumeMatchLobby" class="hidden cyber-btn-emerald w-full py-3 rounded-2xl font-orbitron text-xs sm:text-sm font-black text-white items-center justify-center gap-2 shadow-lg">
+                    <span>▶</span> <span>RESUME ACTIVE MATCH</span>
+                </button>
+
+                <button id="btnLaunchMatchLobby" class="cyber-btn-gold w-full py-3.5 rounded-2xl font-orbitron text-sm sm:text-base font-black text-white flex items-center justify-center gap-2 shadow-lg">
+                    <span>🚀</span> <span>LAUNCH CYBER MATCH</span>
+                </button>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btnLobbyShop" class="cyber-btn py-2.5 rounded-xl font-orbitron text-xs font-bold text-cyan-200 flex items-center justify-center gap-1.5">
+                        <span>🎨</span> <span>COSMETIC SHOP</span>
+                    </button>
+                    <button id="btnLobbyAudio" class="cyber-btn py-2.5 rounded-xl font-orbitron text-xs font-bold text-cyan-200 flex items-center justify-center gap-1.5">
+                        <span id="lobbyAudioIcon">🔊</span> <span id="lobbyAudioText">AUDIO: ON</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UPPER-LEFT DRAG-TO-PULL 2x3 COMPACT CYBER RIBBON DRAWER -->
+    <div id="leftRibbonDrawer" aria-label="Quick Action Pull Ribbon">
+        <div class="ribbon-tray" id="ribbonTray">
+            <!-- 1. HOME LOBBY (Return to Home Screen without losing match) -->
+            <button id="btnRibbonHome" title="Open Home Lobby (Match Paused)" class="cyber-btn-emerald rounded-xl text-[10px] sm:text-xs font-orbitron text-white font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🏠</span> <span>HOME</span>
+            </button>
+
+            <!-- 2. SHOP (Cosmetic Token Skins & Board Themes Armory) -->
+            <button id="btnShop" title="Cosmetic Armory & Themes" class="cyber-btn-gold rounded-xl text-[10px] sm:text-xs font-orbitron text-white font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🎨</span> <span>SHOP</span>
+            </button>
+
+            <!-- 3. SOUND (Web Audio API Synth Toggle) -->
+            <button id="btnAudio" title="Toggle Audio (M)" class="cyber-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-cyan-300 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span id="ribbonAudioIcon">🔊</span> <span id="ribbonAudioLabel">SOUND</span>
+            </button>
+
+            <!-- 4. RUSH / CLASSIC (Quick mode toggle) -->
+            <button id="btnRibbonMode" title="Toggle Quick Rush / Classic Mode" class="cyber-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-amber-300 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span id="ribbonModeIcon">👑</span> <span id="ribbonModeLabel">CLASSIC</span>
+            </button>
+
+            <!-- 5. RESTART (Instant New Match button) -->
+            <button id="btnRibbonRestart" title="Instant New Match" class="cyber-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-rose-300 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🔄</span> <span>RESTART</span>
+            </button>
+
+            <!-- 6. THEME (Quick Board Theme Cycler) -->
+            <button id="btnCycleTheme" title="Cycle Board Theme" class="cyber-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-fuchsia-300 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🌌</span> <span id="themeShortLabel">NEON</span>
+            </button>
+        </div>
+
+        <!-- Always-Visible Interactive Drag-to-Pull Handle -->
+        <button id="ribbonPullTab" class="ribbon-pull-tab" title="Drag/Pull Out or Tap to Toggle Menu">
+            <div class="ribbon-grip-bars"><span></span><span></span></div>
+            <span class="ribbon-chevron text-cyan-300 text-xs font-black leading-none">❯</span>
+            <span id="ribbonTabText" class="font-orbitron text-[8px] font-bold tracking-widest text-cyan-200 uppercase leading-none" style="writing-mode: vertical-rl; text-orientation: mixed;">PULL</span>
+        </button>
+    </div>
+
+    <!-- TOP COMPACT HUD BAR -->
+    <header class="w-full max-w-2xl mx-auto pl-11 pr-1 pt-1 pb-1 flex items-center justify-between gap-1.5 z-20 shrink-0">
+        <div class="cyber-panel px-2.5 py-1 rounded-full flex items-center gap-2 border border-cyan-500/40 min-w-0">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping shrink-0"></span>
+            <span id="liveTicker" class="font-orbitron text-[10px] sm:text-xs font-bold text-cyan-200 truncate">
+                NOVAFORGE // LUDO ROYALE
+            </span>
+        </div>
+
+        <div class="flex items-center gap-1.5 shrink-0">
+            <button id="btnTopHome" title="Return to Home Lobby" class="cyber-panel px-2 py-1 rounded-full border border-cyan-400/50 text-cyan-300 font-orbitron text-[10px] font-bold flex items-center gap-1">
+                <span>🏠</span> <span class="hidden sm:inline">LOBBY</span>
+            </button>
+            <button id="btnCoinHud" class="cyber-panel px-2.5 py-1 rounded-full border border-amber-400/50 flex items-center gap-1 text-amber-300 font-orbitron text-[11px] font-bold">
+                <span>🪙</span>
+                <span id="hudCoins">250</span>
+            </button>
+            <button id="btnStatsHud" class="cyber-panel px-2.5 py-1 rounded-full border border-fuchsia-400/40 hidden sm:flex items-center gap-1.5 text-[10px] font-orbitron text-fuchsia-200">
+                <span>👑 <b id="hudWins">0</b></span>
+                <span>⚔ <b id="hudCuts">0</b></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- TOP PLAYER CARDS (CRIMSON & EMERALD) -->
+    <section class="w-full max-w-xl mx-auto grid grid-cols-2 gap-2 z-10 shrink-0">
+        <!-- Player 0: Crimson -->
+        <div id="card-0" class="cyber-panel rounded-xl px-2.5 py-1.5 border-l-4 border-rose-500 relative transition-all duration-200">
+            <div id="emote-0" class="absolute -bottom-7 left-2 z-40"></div>
+            <div class="flex justify-between items-center mb-0.5">
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]"></span>
+                    <span class="font-orbitron text-xs font-bold text-rose-400">CRIMSON</span>
+                </div>
+                <button data-player="0" class="role-toggle px-1.5 py-0.5 rounded bg-rose-950/80 border border-rose-500/40 text-[9px] font-orbitron text-rose-200">
+                    HUMAN
+                </button>
+            </div>
+            <div class="flex justify-between text-[11px] text-slate-300 font-semibold">
+                <span>CROWNED: <b id="crown-0" class="font-orbitron text-white">0/4</b></span>
+                <span>CUTS: <b id="cuts-0" class="font-orbitron text-rose-400">0</b></span>
+            </div>
+        </div>
+
+        <!-- Player 1: Emerald -->
+        <div id="card-1" class="cyber-panel rounded-xl px-2.5 py-1.5 border-l-4 border-emerald-500 relative transition-all duration-200">
+            <div id="emote-1" class="absolute -bottom-7 right-2 z-40"></div>
+            <div class="flex justify-between items-center mb-0.5">
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]"></span>
+                    <span class="font-orbitron text-xs font-bold text-emerald-400">EMERALD</span>
+                </div>
+                <button data-player="1" class="role-toggle px-1.5 py-0.5 rounded bg-emerald-950/80 border border-emerald-500/40 text-[9px] font-orbitron text-emerald-200">
+                    SMART AI
+                </button>
+            </div>
+            <div class="flex justify-between text-[11px] text-slate-300 font-semibold">
+                <span>CROWNED: <b id="crown-1" class="font-orbitron text-white">0/4</b></span>
+                <span>CUTS: <b id="cuts-1" class="font-orbitron text-emerald-400">0</b></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- CENTER 15x15 ILLUMINATED LUDO BOARD CANVAS -->
+    <main class="flex-1 flex items-center justify-center w-full my-1 overflow-hidden relative z-10">
+        <div id="boardContainer" class="relative aspect-square flex items-center justify-center max-h-full max-w-full">
+            <canvas id="ludoCanvas" class="rounded-2xl shadow-[0_0_35px_rgba(0,243,255,0.18)] border border-cyan-500/35 cursor-pointer"></canvas>
+        </div>
+    </main>
+
+    <!-- BOTTOM PLAYER CARDS (COBALT & SOLAR) -->
+    <section class="w-full max-w-xl mx-auto grid grid-cols-2 gap-2 z-10 shrink-0">
+        <!-- Player 3: Cobalt (Bottom-Left) -->
+        <div id="card-3" class="cyber-panel rounded-xl px-2.5 py-1.5 border-l-4 border-cyan-400 relative transition-all duration-200">
+            <div id="emote-3" class="absolute -top-7 left-2 z-40"></div>
+            <div class="flex justify-between items-center mb-0.5">
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f3ff]"></span>
+                    <span class="font-orbitron text-xs font-bold text-cyan-300">COBALT</span>
+                </div>
+                <button data-player="3" class="role-toggle px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/40 text-[9px] font-orbitron text-cyan-200">
+                    SMART AI
+                </button>
+            </div>
+            <div class="flex justify-between text-[11px] text-slate-300 font-semibold">
+                <span>CROWNED: <b id="crown-3" class="font-orbitron text-white">0/4</b></span>
+                <span>CUTS: <b id="cuts-3" class="font-orbitron text-cyan-300">0</b></span>
+            </div>
+        </div>
+
+        <!-- Player 2: Solar (Bottom-Right) -->
+        <div id="card-2" class="cyber-panel rounded-xl px-2.5 py-1.5 border-l-4 border-amber-400 relative transition-all duration-200">
+            <div id="emote-2" class="absolute -top-7 right-2 z-40"></div>
+            <div class="flex justify-between items-center mb-0.5">
+                <div class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span>
+                    <span class="font-orbitron text-xs font-bold text-amber-400">SOLAR</span>
+                </div>
+                <button data-player="2" class="role-toggle px-1.5 py-0.5 rounded bg-amber-950/80 border border-amber-500/40 text-[9px] font-orbitron text-amber-200">
+                    SMART AI
+                </button>
+            </div>
+            <div class="flex justify-between text-[11px] text-slate-300 font-semibold">
+                <span>CROWNED: <b id="crown-2" class="font-orbitron text-white">0/4</b></span>
+                <span>CUTS: <b id="cuts-2" class="font-orbitron text-amber-400">0</b></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- BOTTOM DICE CONTROLLER & QUICK-CHAT EMOTE DOCK -->
+    <footer class="w-full max-w-xl mx-auto mt-1 flex flex-col gap-1.5 z-20 shrink-0">
+        <!-- 3D Dice Tray -->
+        <div class="cyber-panel rounded-2xl px-3.5 py-2 flex items-center justify-between gap-3 border border-cyan-500/35">
+            <!-- Left: True 3D Tumbling Die + Turn Info -->
+            <div class="flex items-center gap-3">
+                <div id="diceScene" class="scene-3d" title="Tap to Roll 3D Dice">
+                    <div id="diceCube" class="cube-3d">
+                        <!-- Face 1 -->
+                        <div class="cube-face face-1"><span class="pip" style="grid-area: 2 / 2;"></span></div>
+                        <!-- Face 2 -->
+                        <div class="cube-face face-2"><span class="pip" style="grid-area: 1 / 1;"></span><span class="pip" style="grid-area: 3 / 3;"></span></div>
+                        <!-- Face 3 -->
+                        <div class="cube-face face-3"><span class="pip" style="grid-area: 1 / 1;"></span><span class="pip" style="grid-area: 2 / 2;"></span><span class="pip" style="grid-area: 3 / 3;"></span></div>
+                        <!-- Face 4 -->
+                        <div class="cube-face face-4"><span class="pip" style="grid-area: 1 / 1;"></span><span class="pip" style="grid-area: 1 / 3;"></span><span class="pip" style="grid-area: 3 / 1;"></span><span class="pip" style="grid-area: 3 / 3;"></span></div>
+                        <!-- Face 5 -->
+                        <div class="cube-face face-5"><span class="pip" style="grid-area: 1 / 1;"></span><span class="pip" style="grid-area: 1 / 3;"></span><span class="pip" style="grid-area: 2 / 2;"></span><span class="pip" style="grid-area: 3 / 1;"></span><span class="pip" style="grid-area: 3 / 3;"></span></div>
+                        <!-- Face 6 -->
+                        <div class="cube-face face-6"><span class="pip" style="grid-area: 1 / 1;"></span><span class="pip" style="grid-area: 1 / 3;"></span><span class="pip" style="grid-area: 2 / 1;"></span><span class="pip" style="grid-area: 2 / 3;"></span><span class="pip" style="grid-area: 3 / 1;"></span><span class="pip" style="grid-area: 3 / 3;"></span></div>
+                    </div>
+                </div>
+
+                <div>
+                    <div id="turnTitle" class="font-orbitron text-xs sm:text-sm font-black text-rose-400 uppercase leading-tight">
+                        CRIMSON'S TURN
+                    </div>
+                    <div id="turnSub" class="text-[11px] text-slate-400">
+                        Tap 3D Cube or [SPACE]
+                    </div>
+                    <div class="flex items-center gap-1.5 mt-0.5">
+                        <span class="text-[9px] font-orbitron text-slate-400">6-STREAK:</span>
+                        <span id="streak-1" class="w-2 h-2 rounded-full bg-slate-800 border border-slate-600"></span>
+                        <span id="streak-2" class="w-2 h-2 rounded-full bg-slate-800 border border-slate-600"></span>
+                        <span id="streak-3" class="w-2 h-2 rounded-full bg-slate-800 border border-slate-600"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Roll Button + Auto-Move Checkbox -->
+            <div class="flex flex-col items-end gap-1">
+                <button id="btnRollDice" class="cyber-btn-gold px-4 sm:px-5 py-2 rounded-xl font-orbitron text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 shadow-lg">
+                    <span>🎲</span> <span>ROLL 3D DICE</span>
+                </button>
+                <label class="flex items-center gap-1.5 text-[11px] text-slate-300 cursor-pointer">
+                    <input id="chkAutoMove" type="checkbox" checked class="accent-cyan-400 rounded cursor-pointer">
+                    <span>Auto-Move Single</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Quick-Chat Emote Bar -->
+        <div class="cyber-panel rounded-xl p-1.5 grid grid-cols-6 gap-1 border border-slate-800">
+            <button data-emote="🎲 Lucky 6!" class="emote-btn cyber-btn rounded-lg py-1 text-[10px] font-semibold text-cyan-100 truncate">🎲 Lucky 6!</button>
+            <button data-emote="⚡ Nice Cut!" class="emote-btn cyber-btn rounded-lg py-1 text-[10px] font-semibold text-cyan-100 truncate">⚡ Nice Cut!</button>
+            <button data-emote="😱 Nooo!" class="emote-btn cyber-btn rounded-lg py-1 text-[10px] font-semibold text-cyan-100 truncate">😱 Nooo!</button>
+            <button data-emote="🎯 Watch Out!" class="emote-btn cyber-btn rounded-lg py-1 text-[10px] font-semibold text-cyan-100 truncate">🎯 Watch Out!</button>
+            <button data-emote="🏆 GG!" class="emote-btn cyber-btn rounded-lg py-1 text-[10px] font-semibold text-cyan-100 truncate">🏆 GG!</button>
+            <button data-emote="⏳ Hurry!" class="emote-btn cyber-btn rounded-lg py-1 text-[10px] font-semibold text-cyan-100 truncate">⏳ Hurry!</button>
+        </div>
+    </footer>
+
+    <!-- COSMETIC ARMORY & THEME SHOP MODAL -->
+    <div id="shopModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="cyber-panel rounded-2xl p-5 max-w-lg w-full max-h-[88vh] flex flex-col border border-amber-400/50">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+                <div>
+                    <span class="text-[10px] font-orbitron uppercase tracking-widest text-amber-400 block">NOVAFORGE CUSTOMIZATION</span>
+                    <h2 class="font-orbitron text-xl font-black text-white">COSMETIC ARMORY</h2>
+                </div>
+                <div class="px-3 py-1 rounded-full bg-slate-900 border border-amber-400/40 font-orbitron text-xs font-bold text-amber-300">
+                    🪙 <span id="shopCoins">250</span>
+                </div>
+            </div>
+
+            <div class="overflow-y-auto my-3 pr-1 space-y-4">
+                <div>
+                    <h3 class="font-orbitron text-xs font-bold text-cyan-300 uppercase tracking-wider mb-2">PROCEDURAL TOKEN SKINS</h3>
+                    <div id="skinShopList" class="grid grid-cols-2 gap-2.5"></div>
+                </div>
+                <div>
+                    <h3 class="font-orbitron text-xs font-bold text-fuchsia-300 uppercase tracking-wider mb-2">ARENA BOARD THEMES</h3>
+                    <div id="themeShopList" class="grid grid-cols-2 gap-2.5"></div>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800 flex justify-end">
+                <button id="btnCloseShop" class="cyber-btn px-5 py-2 rounded-xl font-orbitron text-xs font-bold text-white">
+                    DONE
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VICTORY MODAL -->
+    <div id="victoryModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="cyber-panel rounded-2xl p-6 max-w-md w-full text-center border border-amber-400/60">
+            <div class="text-4xl mb-2">👑</div>
+            <h2 id="victoryTitle" class="font-orbitron text-2xl font-black text-amber-300 mb-1">CRIMSON TRIUMPHS!</h2>
+            <p class="text-xs text-slate-300 mb-5">Victory Crown secured! Bonus +250 🪙 Cyber-Coins awarded.</p>
+            <div class="flex flex-col sm:flex-row gap-2.5">
+                <button id="btnVictoryHome" class="cyber-btn flex-1 py-3 rounded-xl font-orbitron text-xs font-bold text-cyan-200">
+                    🏠 HOME LOBBY
+                </button>
+                <button id="btnPlayAgain" class="cyber-btn-gold flex-1 py-3 rounded-xl font-orbitron text-xs font-bold text-white">
+                    ▶ PLAY REMATCH
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /********************************************************************
+         * NOVA LUDO: CYBER ROYALE | Complete Single-File Engine
+         ********************************************************************/
+
+        const STORAGE_KEY = 'NOVAFORGE_LUDO_ROYALE_V4';
+
+        const TOKEN_SKINS = [
+            { id: 'cyber', name: 'Cyber Discs', cost: 0, desc: 'Dual neon plasma rings' },
+            { id: 'mecha', name: 'Mecha Crowns', cost: 150, desc: 'Hexagonal armor plating' },
+            { id: 'crystal', name: 'Void Crystals', cost: 250, desc: 'Faceted starlight gems' },
+            { id: 'royal', name: 'Imperial Gold', cost: 400, desc: 'Sovereign golden crests' }
+        ];
+
+        const BOARD_THEMES = [
+            { id: 'neon', short: 'NEON', name: 'Cyber-Neon Dark', cost: 0, bg: '#070b18', tile: '#0d1428', grid: 'rgba(0, 243, 255, 0.16)' },
+            { id: 'velvet', short: 'ROYAL', name: 'Royal Gold & Velvet', cost: 180, bg: '#16071c', tile: '#240c2e', grid: 'rgba(251, 191, 36, 0.22)' },
+            { id: 'synth', short: 'SYNTH', name: 'Synthwave Sunset', cost: 260, bg: '#140624', tile: '#1f0b38', grid: 'rgba(244, 63, 94, 0.22)' },
+            { id: 'frost', short: 'FROST', name: 'Frosted Cyber-Glass', cost: 320, bg: '#081c24', tile: '#0c2b36', grid: 'rgba(56, 189, 248, 0.25)' }
+        ];
+
+        const defaultProfile = {
+            coins: 250,
+            wins: 0,
+            cuts: 0,
+            crowns: 0,
+            lastDailyDate: '',
+            unlockedSkins: ['cyber'],
+            unlockedThemes: ['neon'],
+            activeSkin: 'cyber',
+            activeTheme: 'neon'
+        };
+
+        let profile = loadProfile();
+
+        function loadProfile() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return JSON.parse(JSON.stringify(defaultProfile));
+                return { ...JSON.parse(JSON.stringify(defaultProfile)), ...JSON.parse(raw) };
+            } catch (e) {
+                return JSON.parse(JSON.stringify(defaultProfile));
+            }
+        }
+
+        function saveProfile() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+            } catch (e) {}
+            updateHeaderEconomyUI();
+        }
+
+        // --- PROCEDURAL WEB AUDIO SYNTHESIZER ---
+        class LudoSynth {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            }
+            toggleMute() {
+                this.muted = !this.muted;
+                return this.muted;
+            }
+            playDiceRoll() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                for (let i = 0; i < 4; i++) {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(260 + i * 95, now + i * 0.055);
+                    gain.gain.setValueAtTime(0.08, now + i * 0.055);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.055 + 0.05);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + i * 0.055);
+                    osc.stop(now + i * 0.055 + 0.05);
+                }
+            }
+            playStepHop(stepIdx = 1) {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(420 + (stepIdx % 6) * 55, now);
+                osc.frequency.exponentialRampToValueAtTime(680, now + 0.065);
+                gain.gain.setValueAtTime(0.09, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.07);
+            }
+            playCutExplosion() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(340, now);
+                osc.frequency.exponentialRampToValueAtTime(55, now + 0.28);
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.29);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.29);
+            }
+            playCrownFanfare() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(f, now + idx * 0.065);
+                    gain.gain.setValueAtTime(0.11, now + idx * 0.065);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.065 + 0.22);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.065);
+                    osc.stop(now + idx * 0.065 + 0.22);
+                });
+            }
+        }
+
+        const audio = new LudoSynth();
+
+        // --- 15x15 LUDO TRACK GEOMETRY & FACTION DEFINITIONS ---
+        const MAIN_TRACK = [
+            [1,6],[2,6],[3,6],[4,6],[5,6],
+            [6,5],[6,4],[6,3],[6,2],[6,1],[6,0],
+            [7,0],
+            [8,0],[8,1],[8,2],[8,3],[8,4],[8,5],
+            [9,6],[10,6],[11,6],[12,6],[13,6],[14,6],
+            [14,7],
+            [14,8],[13,8],[12,8],[11,8],[10,8],[9,8],
+            [8,9],[8,10],[8,11],[8,12],[8,13],[8,14],
+            [7,14],
+            [6,14],[6,13],[6,12],[6,11],[6,10],[6,9],
+            [5,8],[4,8],[3,8],[2,8],[1,8],[0,8],
+            [0,7],
+            [0,6]
+        ];
+
+        const SAFE_TRACK_INDICES = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
+
+        const PLAYERS = [
+            {
+                id: 0,
+                name: 'CRIMSON',
+                color: '#f43f5e',
+                glow: 'rgba(244, 63, 94, 0.55)',
+                dark: '#4c0519',
+                startOffset: 0,
+                baseOrigin: [0, 0],
+                baseSlots: [[1.8, 1.8], [4.2, 1.8], [1.8, 4.2], [4.2, 4.2]],
+                homeStretch: [[1,7],[2,7],[3,7],[4,7],[5,7]],
+                goalCoord: [6.3, 7]
+            },
+            {
+                id: 1,
+                name: 'EMERALD',
+                color: '#10b981',
+                glow: 'rgba(16, 185, 129, 0.55)',
+                dark: '#064e3b',
+                startOffset: 13,
+                baseOrigin: [9, 0],
+                baseSlots: [[10.8, 1.8], [13.2, 1.8], [10.8, 4.2], [13.2, 4.2]],
+                homeStretch: [[7,1],[7,2],[7,3],[7,4],[7,5]],
+                goalCoord: [7, 6.3]
+            },
+            {
+                id: 2,
+                name: 'SOLAR',
+                color: '#fbbf24',
+                glow: 'rgba(251, 191, 36, 0.55)',
+                dark: '#451a03',
+                startOffset: 26,
+                baseOrigin: [9, 9],
+                baseSlots: [[10.8, 10.8], [13.2, 10.8], [10.8, 13.2], [13.2, 13.2]],
+                homeStretch: [[13,7],[12,7],[11,7],[10,7],[9,7]],
+                goalCoord: [7.7, 7]
+            },
+            {
+                id: 3,
+                name: 'COBALT',
+                color: '#00f3ff',
+                glow: 'rgba(0, 243, 255, 0.55)',
+                dark: '#083344',
+                startOffset: 39,
+                baseOrigin: [0, 9],
+                baseSlots: [[1.8, 10.8], [4.2, 10.8], [1.8, 13.2], [4.2, 13.2]],
+                homeStretch: [[7,13],[7,12],[7,11],[7,10],[7,9]],
+                goalCoord: [7, 7.7]
+            }
+        ];
+
+        // --- MATCH & LOBBY STATE ---
+        let isLobbyOpen = true;
+        let hasActiveMatch = false;
+        let quickRushMode = false;
+        let playerRoles = ['HUMAN', 'AI', 'AI', 'AI']; // 'HUMAN', 'AI', 'OFF'
+        let tokens = [];
+        let playerStats = [];
+        let currentTurn = 0;
+        let turnPhase = 'WAIT_ROLL'; // WAIT_ROLL, ROLLING, WAIT_MOVE, ANIMATING, GAME_OVER
+        let diceValue = 6;
+        let consecutiveSixes = 0;
+        let validTokenMoves = [];
+        let particles = [];
+        let floatingPopups = [];
+        let pulseClock = 0;
+
+        const canvas = document.getElementById('ludoCanvas');
+        const ctx = canvas.getContext('2d');
+        let boardSize = 420;
+        let cellSize = boardSize / 15;
+
+        function resizeBoard() {
+            const mainEl = canvas.parentElement.parentElement;
+            const availW = mainEl.clientWidth - 8;
+            const availH = mainEl.clientHeight - 8;
+            boardSize = Math.max(260, Math.floor(Math.min(availW, availH, 540)));
+            canvas.width = boardSize;
+            canvas.height = boardSize;
+            cellSize = boardSize / 15;
+        }
+        window.addEventListener('resize', resizeBoard);
+
+        function ensureValidPlayerRoles() {
+            const activeCount = playerRoles.filter(r => r !== 'OFF').length;
+            if (activeCount < 2) {
+                playerRoles[0] = 'HUMAN';
+                playerRoles[2] = 'AI';
+            }
+        }
+
+        function initMatch() {
+            ensureValidPlayerRoles();
+            tokens = [];
+            playerStats = [];
+            for (let p = 0; p < 4; p++) {
+                playerStats.push({ crowned: 0, cuts: 0 });
+                if (playerRoles[p] === 'OFF') continue;
+
+                for (let t = 0; t < 4; t++) {
+                    const startProgress = (quickRushMode && t === 0) ? 0 : -1;
+                    const coord = getTokenGridCoord(p, t, startProgress);
+                    tokens.push({
+                        player: p,
+                        index: t,
+                        progress: startProgress,
+                        x: coord[0],
+                        y: coord[1],
+                        hopScale: 1
+                    });
+                }
+            }
+
+            // Find first active faction
+            currentTurn = 0;
+            while (playerRoles[currentTurn] === 'OFF') {
+                currentTurn = (currentTurn + 1) % 4;
+            }
+
+            turnPhase = 'WAIT_ROLL';
+            diceValue = 6;
+            consecutiveSixes = 0;
+            validTokenMoves = [];
+            hasActiveMatch = true;
+
+            document.getElementById('victoryModal').classList.add('hidden');
+            document.getElementById('victoryModal').classList.remove('flex');
+
+            updatePlayerCardsUI();
+            updateTurnUI();
+            syncRibbonStateUI();
+            setTicker(`${PLAYERS[currentTurn].name}'S TURN — ROLL THE 3D CUBE!`);
+
+            if (!isLobbyOpen && playerRoles[currentTurn] === 'AI') {
+                setTimeout(() => triggerRollDice(), 650);
+            }
+        }
+
+        function openHomeLobby() {
+            isLobbyOpen = true;
+            setRibbonOpen(false);
+            const lobby = document.getElementById('homeScreenLobby');
+            lobby.classList.remove('hidden');
+            lobby.classList.add('flex');
+
+            const resumeBtn = document.getElementById('btnResumeMatchLobby');
+            if (hasActiveMatch && turnPhase !== 'GAME_OVER') {
+                resumeBtn.classList.remove('hidden');
+                resumeBtn.classList.add('flex');
+            } else {
+                resumeBtn.classList.add('hidden');
+                resumeBtn.classList.remove('flex');
+            }
+            syncLobbyUI();
+        }
+
+        function closeHomeLobbyAndResume() {
+            isLobbyOpen = false;
+            const lobby = document.getElementById('homeScreenLobby');
+            lobby.classList.add('hidden');
+            lobby.classList.remove('flex');
+            resizeBoard();
+            updateTurnUI();
+
+            if (turnPhase === 'WAIT_ROLL' && playerRoles[currentTurn] === 'AI') {
+                setTimeout(() => triggerRollDice(), 500);
+            } else if (turnPhase === 'WAIT_MOVE' && playerRoles[currentTurn] === 'AI') {
+                const chosen = chooseSmartAIMove(currentTurn, validTokenMoves, diceValue);
+                setTimeout(() => executeTokenMove(chosen, diceValue), 420);
+            }
+        }
+
+        function getTokenGridCoord(playerIdx, tokenIdx, progress) {
+            const p = PLAYERS[playerIdx];
+            if (progress === -1) {
+                return [...p.baseSlots[tokenIdx]];
+            }
+            if (progress >= 0 && progress <= 50) {
+                const trackIdx = (p.startOffset + progress) % 52;
+                const [cx, cy] = MAIN_TRACK[trackIdx];
+                return [cx + 0.5, cy + 0.5];
+            }
+            if (progress >= 51 && progress <= 55) {
+                const stretchIdx = progress - 51;
+                const [cx, cy] = p.homeStretch[stretchIdx];
+                return [cx + 0.5, cy + 0.5];
+            }
+            return [p.goalCoord[0] + 0.5, p.goalCoord[1] + 0.5];
+        }
+
+        // --- DICE ROLL & 3D CUBE ROTATION ---
+        const diceCube = document.getElementById('diceCube');
+        let cubeRotX = 0;
+        let cubeRotY = 0;
+
+        function set3DCubeFace(val) {
+            const baseRotations = {
+                1: [0, 0],
+                2: [0, 180],
+                3: [0, -90],
+                4: [0, 90],
+                5: [-90, 0],
+                6: [90, 0]
+            };
+            const [targetX, targetY] = baseRotations[val] || [0, 0];
+            cubeRotX += 360 * 2 + ((targetX - (cubeRotX % 360)) % 360);
+            cubeRotY += 360 * 2 + ((targetY - (cubeRotY % 360)) % 360);
+            diceCube.style.transform = `rotateX(${cubeRotX}deg) rotateY(${cubeRotY}deg)`;
+        }
+
+        function triggerRollDice() {
+            if (isLobbyOpen || turnPhase !== 'WAIT_ROLL') return;
+            audio.init();
+            audio.playDiceRoll();
+            turnPhase = 'ROLLING';
+            document.getElementById('btnRollDice').disabled = true;
+
+            const rolled = Math.floor(Math.random() * 6) + 1;
+            diceValue = rolled;
+            set3DCubeFace(rolled);
+
+            setTimeout(() => {
+                onDiceRollComplete(rolled);
+            }, 600);
+        }
+
+        function onDiceRollComplete(rolled) {
+            if (isLobbyOpen) {
+                turnPhase = 'WAIT_ROLL';
+                return;
+            }
+            const p = PLAYERS[currentTurn];
+
+            if (rolled === 6) {
+                consecutiveSixes++;
+                if (playerRoles[currentTurn] === 'HUMAN') awardCoins(10, 'LUCKY 6 +10🪙');
+                spawnBurst(boardSize / 2, boardSize / 2, p.color, 18);
+                if (playerRoles[currentTurn] === 'AI' && Math.random() < 0.45) {
+                    showPlayerEmote(currentTurn, '🎲 Lucky 6!');
+                }
+            } else {
+                consecutiveSixes = 0;
+            }
+
+            updateStreakDots();
+
+            if (consecutiveSixes >= 3) {
+                setTicker(`${p.name} ROLLED THREE 6s — TURN FORFEITED!`);
+                setTimeout(() => advanceToNextPlayer(), 900);
+                return;
+            }
+
+            validTokenMoves = getLegalMovesForPlayer(currentTurn, rolled);
+
+            if (validTokenMoves.length === 0) {
+                setTicker(`${p.name} ROLLED ${rolled} — NO VALID MOVES`);
+                setTimeout(() => advanceToNextPlayer(), 800);
+                return;
+            }
+
+            turnPhase = 'WAIT_MOVE';
+            updateTurnUI();
+
+            const isAI = playerRoles[currentTurn] === 'AI';
+            const autoSingle = document.getElementById('chkAutoMove').checked;
+
+            if (isAI) {
+                const chosen = chooseSmartAIMove(currentTurn, validTokenMoves, rolled);
+                setTimeout(() => {
+                    if (!isLobbyOpen) executeTokenMove(chosen, rolled);
+                }, 420);
+            } else if (autoSingle && areAllMovesEquivalent(validTokenMoves)) {
+                setTimeout(() => {
+                    if (!isLobbyOpen) executeTokenMove(validTokenMoves[0], rolled);
+                }, 280);
+            } else {
+                setTicker(`${p.name} ROLLED ${rolled} — TAP A GLOWING TOKEN!`);
+            }
+        }
+
+        function getLegalMovesForPlayer(playerIdx, roll) {
+            const pTokens = tokens.filter(t => t.player === playerIdx);
+            const legal = [];
+            for (const tok of pTokens) {
+                if (tok.progress === -1) {
+                    if (roll === 6) legal.push(tok);
+                } else if (tok.progress >= 0 && tok.progress + roll <= 56) {
+                    legal.push(tok);
+                }
+            }
+            return legal;
+        }
+
+        function areAllMovesEquivalent(moves) {
+            if (moves.length <= 1) return true;
+            const firstProg = moves[0].progress;
+            return moves.every(m => m.progress === firstProg);
+        }
+
+        // --- SMART TACTICAL AI EVALUATION ---
+        function chooseSmartAIMove(playerIdx, legalMoves, roll) {
+            let bestToken = legalMoves[0];
+            let bestScore = -9999;
+
+            for (const tok of legalMoves) {
+                let score = 0;
+                const targetProgress = tok.progress === -1 ? 0 : tok.progress + roll;
+
+                if (tok.progress === -1) {
+                    score += 75;
+                } else {
+                    if (targetProgress === 56) score += 110;
+
+                    if (targetProgress <= 50) {
+                        const targetTrackIdx = (PLAYERS[playerIdx].startOffset + targetProgress) % 52;
+                        const opponentsAtTarget = getOpponentTokensAtTrackIndex(playerIdx, targetTrackIdx);
+                        if (opponentsAtTarget.length > 0 && !SAFE_TRACK_INDICES.has(targetTrackIdx)) {
+                            score += 130;
+                        }
+                        if (SAFE_TRACK_INDICES.has(targetTrackIdx)) {
+                            score += 48;
+                        }
+                    }
+
+                    if (tok.progress <= 50 && targetProgress >= 51) {
+                        score += 65;
+                    }
+
+                    score += tok.progress * 0.6;
+                }
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestToken = tok;
+                }
+            }
+            return bestToken;
+        }
+
+        function getOpponentTokensAtTrackIndex(playerIdx, trackIdx) {
+            return tokens.filter(t => {
+                if (t.player === playerIdx || t.progress < 0 || t.progress > 50) return false;
+                const tTrack = (PLAYERS[t.player].startOffset + t.progress) % 52;
+                return tTrack === trackIdx;
+            });
+        }
+
+        // --- STEP-BY-STEP HOP ANIMATION & CAPTURE LOGIC ---
+        function executeTokenMove(token, roll) {
+            if (turnPhase !== 'WAIT_MOVE') return;
+            turnPhase = 'ANIMATING';
+            validTokenMoves = [];
+
+            const startProg = token.progress;
+            const steps = startProg === -1 ? [0] : Array.from({ length: roll }, (_, i) => startProg + i + 1);
+
+            let stepCounter = 0;
+
+            function hopNextStep() {
+                if (stepCounter >= steps.length) {
+                    finalizeTokenMove(token, startProg === -1, roll);
+                    return;
+                }
+                const nextProg = steps[stepCounter];
+                token.progress = nextProg;
+                const [gx, gy] = getTokenGridCoord(token.player, token.index, nextProg);
+                token.x = gx;
+                token.y = gy;
+                token.hopScale = 1.38;
+                audio.playStepHop(stepCounter + 1);
+                stepCounter++;
+                setTimeout(hopNextStep, 130);
+            }
+
+            hopNextStep();
+        }
+
+        function finalizeTokenMove(token, deployedFromBase, roll) {
+            token.hopScale = 1;
+            const pIdx = token.player;
+            const p = PLAYERS[pIdx];
+            let earnedBonusRoll = (roll === 6);
+
+            if (deployedFromBase && playerRoles[pIdx] === 'HUMAN') {
+                awardCoins(15, 'DEPLOYED +15🪙');
+            }
+
+            // Check Capture on Main Track
+            if (token.progress >= 0 && token.progress <= 50) {
+                const trackIdx = (p.startOffset + token.progress) % 52;
+                if (!SAFE_TRACK_INDICES.has(trackIdx)) {
+                    const victims = getOpponentTokensAtTrackIndex(pIdx, trackIdx);
+                    if (victims.length > 0) {
+                        earnedBonusRoll = true;
+                        for (const v of victims) {
+                            v.progress = -1;
+                            const [bx, by] = getTokenGridCoord(v.player, v.index, -1);
+                            v.x = bx;
+                            v.y = by;
+                            playerStats[pIdx].cuts++;
+                            if (playerRoles[pIdx] === 'HUMAN') {
+                                profile.cuts++;
+                                awardCoins(50, 'OPPONENT CUT +50🪙');
+                                saveProfile();
+                            }
+                            if (playerRoles[v.player] === 'AI') {
+                                showPlayerEmote(v.player, '😱 Nooo!');
+                            }
+                        }
+                        if (playerRoles[pIdx] === 'AI') {
+                            showPlayerEmote(pIdx, '⚡ Nice Cut!');
+                        }
+                        audio.playCutExplosion();
+                        spawnBurst(token.x * cellSize, token.y * cellSize, p.color, 28);
+                        setTicker(`${p.name} CAPTURED AN OPPONENT! BONUS ROLL!`);
+                    }
+                }
+            }
+
+            // Check Crowning into Center Goal
+            if (token.progress === 56) {
+                earnedBonusRoll = true;
+                playerStats[pIdx].crowned++;
+                audio.playCrownFanfare();
+                spawnBurst(token.x * cellSize, token.y * cellSize, '#fbbf24', 35);
+                if (playerRoles[pIdx] === 'HUMAN') {
+                    profile.crowns = (profile.crowns || 0) + 1;
+                    awardCoins(75, 'CROWNED +75🪙');
+                    saveProfile();
+                }
+                setTicker(`${p.name} CROWNED A TOKEN! BONUS ROLL!`);
+
+                const needed = quickRushMode ? 2 : 4;
+                if (playerStats[pIdx].crowned >= needed) {
+                    handleMatchVictory(pIdx);
+                    return;
+                }
+            }
+
+            updatePlayerCardsUI();
+
+            if (earnedBonusRoll) {
+                turnPhase = 'WAIT_ROLL';
+                updateTurnUI();
+                if (!isLobbyOpen && playerRoles[currentTurn] === 'AI') {
+                    setTimeout(() => triggerRollDice(), 650);
+                }
+            } else {
+                advanceToNextPlayer();
+            }
+        }
+
+        function advanceToNextPlayer() {
+            consecutiveSixes = 0;
+            updateStreakDots();
+
+            let safety = 0;
+            do {
+                currentTurn = (currentTurn + 1) % 4;
+                safety++;
+            } while (playerRoles[currentTurn] === 'OFF' && safety < 5);
+
+            turnPhase = 'WAIT_ROLL';
+            updatePlayerCardsUI();
+            updateTurnUI();
+            setTicker(`${PLAYERS[currentTurn].name}'S TURN`);
+
+            if (!isLobbyOpen && playerRoles[currentTurn] === 'AI') {
+                setTimeout(() => triggerRollDice(), 650);
+            }
+        }
+
+        function handleMatchVictory(winnerIdx) {
+            turnPhase = 'GAME_OVER';
+            hasActiveMatch = false;
+            const winner = PLAYERS[winnerIdx];
+            if (playerRoles[winnerIdx] === 'HUMAN') {
+                profile.wins++;
+                awardCoins(250, 'VICTORY +250🪙');
+                saveProfile();
+            }
+            document.getElementById('victoryTitle').textContent = `${winner.name} TRIUMPHS!`;
+            document.getElementById('victoryTitle').style.color = winner.color;
+            document.getElementById('victoryModal').classList.remove('hidden');
+            document.getElementById('victoryModal').classList.add('flex');
+        }
+
+        // --- BOARD & TOKEN RENDERING ENGINE ---
+        function getActiveBoardTheme() {
+            return BOARD_THEMES.find(t => t.id === profile.activeTheme) || BOARD_THEMES[0];
+        }
+
+        function renderBoard() {
+            const theme = getActiveBoardTheme();
+            pulseClock += 0.06;
+
+            ctx.clearRect(0, 0, boardSize, boardSize);
+            ctx.fillStyle = theme.bg;
+            ctx.fillRect(0, 0, boardSize, boardSize);
+
+            // 1. Draw 15x15 Grid Tiles
+            for (let r = 0; r < 15; r++) {
+                for (let c = 0; c < 15; c++) {
+                    if ((r < 6 && c < 6) || (r < 6 && c >= 9) || (r >= 9 && c < 6) || (r >= 9 && c >= 9)) continue;
+                    if (r >= 6 && r <= 8 && c >= 6 && c <= 8) continue;
+
+                    ctx.fillStyle = theme.tile;
+                    ctx.strokeStyle = theme.grid;
+                    ctx.lineWidth = 1;
+                    ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
+                    ctx.strokeRect(c * cellSize, r * cellSize, cellSize, cellSize);
+                }
+            }
+
+            // 2. Color Home Stretch Lanes & Starting Safe Tiles
+            PLAYERS.forEach(p => {
+                const [sc, sr] = MAIN_TRACK[p.startOffset];
+                ctx.fillStyle = p.dark;
+                ctx.fillRect(sc * cellSize + 1, sr * cellSize + 1, cellSize - 2, cellSize - 2);
+                ctx.strokeStyle = p.color;
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(sc * cellSize + 1, sr * cellSize + 1, cellSize - 2, cellSize - 2);
+
+                p.homeStretch.forEach(([hc, hr]) => {
+                    ctx.fillStyle = p.dark;
+                    ctx.fillRect(hc * cellSize + 1, hr * cellSize + 1, cellSize - 2, cellSize - 2);
+                    ctx.strokeStyle = p.color;
+                    ctx.lineWidth = 1.2;
+                    ctx.strokeRect(hc * cellSize + 1, hr * cellSize + 1, cellSize - 2, cellSize - 2);
+                });
+            });
+
+            // 3. Draw Safe Star Icons on all 8 Safe Tiles
+            SAFE_TRACK_INDICES.forEach(idx => {
+                const [c, r] = MAIN_TRACK[idx];
+                const isStart = (idx % 13 === 0);
+                drawStarIcon((c + 0.5) * cellSize, (r + 0.5) * cellSize, cellSize * 0.28, isStart ? '#ffffff' : '#fbbf24');
+            });
+
+            // 4. Draw 4 Corner Home Bases
+            PLAYERS.forEach(p => {
+                const [ox, oy] = p.baseOrigin;
+                const bx = ox * cellSize;
+                const by = oy * cellSize;
+                const bw = 6 * cellSize;
+                const isOff = playerRoles[p.id] === 'OFF';
+
+                ctx.save();
+                ctx.globalAlpha = isOff ? 0.35 : 1;
+                ctx.fillStyle = p.dark;
+                ctx.fillRect(bx, by, bw, bw);
+                ctx.strokeStyle = p.color;
+                ctx.lineWidth = 3;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = currentTurn === p.id ? 16 : 6;
+                ctx.strokeRect(bx + 2, by + 2, bw - 4, bw - 4);
+
+                ctx.fillStyle = 'rgba(5, 9, 20, 0.65)';
+                ctx.fillRect(bx + cellSize * 0.75, by + cellSize * 0.75, cellSize * 4.5, cellSize * 4.5);
+
+                p.baseSlots.forEach(([sx, sy]) => {
+                    ctx.beginPath();
+                    ctx.arc(sx * cellSize, sy * cellSize, cellSize * 0.44, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                    ctx.fill();
+                    ctx.strokeStyle = p.color;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                });
+                ctx.restore();
+            });
+
+            // 5. Draw Center 4-Triangle Victory Crown
+            const cx = 7.5 * cellSize;
+            const cy = 7.5 * cellSize;
+            const tl = [6 * cellSize, 6 * cellSize];
+            const tr = [9 * cellSize, 6 * cellSize];
+            const br = [9 * cellSize, 9 * cellSize];
+            const bl = [6 * cellSize, 9 * cellSize];
+
+            const tris = [
+                { p: PLAYERS[0], pts: [tl, bl, [cx, cy]] },
+                { p: PLAYERS[1], pts: [tl, tr, [cx, cy]] },
+                { p: PLAYERS[2], pts: [tr, br, [cx, cy]] },
+                { p: PLAYERS[3], pts: [bl, br, [cx, cy]] }
+            ];
+
+            tris.forEach(({ p, pts }) => {
+                ctx.beginPath();
+                ctx.moveTo(pts[0][0], pts[0][1]);
+                ctx.lineTo(pts[1][0], pts[1][1]);
+                ctx.lineTo(pts[2][0], pts[2][1]);
+                ctx.closePath();
+                ctx.fillStyle = p.dark;
+                ctx.fill();
+                ctx.strokeStyle = p.color;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+
+            ctx.font = `${Math.floor(cellSize * 0.65)}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('👑', cx, cy);
+
+            // 6. Group Tokens by Tile for Radial Stacking & Render Tokens
+            const groups = new Map();
+            tokens.forEach(tok => {
+                const key = `${tok.x.toFixed(1)},${tok.y.toFixed(1)}`;
+                if (!groups.has(key)) groups.set(key, []);
+                groups.get(key).push(tok);
+            });
+
+            groups.forEach(stack => {
+                stack.forEach((tok, idx) => {
+                    let drawX = tok.x * cellSize;
+                    let drawY = tok.y * cellSize;
+                    if (stack.length > 1) {
+                        const angle = (idx / stack.length) * Math.PI * 2;
+                        const offsetR = cellSize * 0.17;
+                        drawX += Math.cos(angle) * offsetR;
+                        drawY += Math.sin(angle) * offsetR;
+                    }
+                    tok.renderX = drawX;
+                    tok.renderY = drawY;
+                    tok.hopScale += (1 - tok.hopScale) * 0.25;
+                    drawToken(tok, drawX, drawY, stack.length > 1 ? 0.82 : 1.0);
+                });
+            });
+
+            // 7. Render Particles & Floating Coin Popups
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const pt = particles[i];
+                pt.x += pt.vx;
+                pt.y += pt.vy;
+                pt.alpha -= 0.03;
+                if (pt.alpha <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+                ctx.save();
+                ctx.globalAlpha = pt.alpha;
+                ctx.fillStyle = pt.color;
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            for (let i = floatingPopups.length - 1; i >= 0; i--) {
+                const fp = floatingPopups[i];
+                fp.y -= 0.8;
+                fp.alpha -= 0.022;
+                if (fp.alpha <= 0) {
+                    floatingPopups.splice(i, 1);
+                    continue;
+                }
+                ctx.save();
+                ctx.globalAlpha = fp.alpha;
+                ctx.font = `bold ${Math.floor(cellSize * 0.36)}px 'Orbitron', sans-serif`;
+                ctx.fillStyle = '#fbbf24';
+                ctx.textAlign = 'center';
+                ctx.fillText(fp.text, fp.x, fp.y);
+                ctx.restore();
+            }
+
+            requestAnimationFrame(renderBoard);
+        }
+
+        function drawToken(tok, x, y, stackScale) {
+            const p = PLAYERS[tok.player];
+            const isSelectable = turnPhase === 'WAIT_MOVE' && validTokenMoves.includes(tok);
+            const r = cellSize * 0.34 * tok.hopScale * stackScale;
+
+            ctx.save();
+            ctx.translate(x, y);
+
+            if (isSelectable) {
+                const ringR = r + 4 + Math.sin(pulseClock * 2.2) * 2.5;
+                ctx.beginPath();
+                ctx.arc(0, 0, ringR, 0, Math.PI * 2);
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2.2;
+                ctx.setLineDash([4, 3]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            const skin = profile.activeSkin;
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = isSelectable ? 14 : 7;
+
+            if (skin === 'mecha') {
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const a = (i / 6) * Math.PI * 2 + pulseClock * 0.2;
+                    const px = Math.cos(a) * r;
+                    const py = Math.sin(a) * r;
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+            } else if (skin === 'crystal') {
+                ctx.beginPath();
+                ctx.moveTo(0, -r * 1.15);
+                ctx.lineTo(r * 1.05, 0);
+                ctx.lineTo(0, r * 1.15);
+                ctx.lineTo(-r * 1.05, 0);
+                ctx.closePath();
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#e0f2fe';
+                ctx.stroke();
+            } else if (skin === 'royal') {
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                ctx.lineWidth = 2.6;
+                ctx.strokeStyle = '#fbbf24';
+                ctx.stroke();
+            } else {
+                ctx.beginPath();
+                ctx.arc(0, 0, r, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+            }
+
+            ctx.beginPath();
+            ctx.arc(0, 0, r * 0.56, 0, Math.PI * 2);
+            ctx.fillStyle = '#090d1a';
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `700 ${Math.max(9, Math.floor(r * 0.85))}px 'Orbitron', sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(String(tok.index + 1), 0, 0.5);
+
+            ctx.restore();
+        }
+
+        function drawStarIcon(cx, cy, radius, color) {
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.beginPath();
+            for (let i = 0; i < 5; i++) {
+                const outerA = (i * 72 - 90) * Math.PI / 180;
+                const innerA = ((i * 72 + 36) - 90) * Math.PI / 180;
+                ctx.lineTo(Math.cos(outerA) * radius, Math.sin(outerA) * radius);
+                ctx.lineTo(Math.cos(innerA) * radius * 0.45, Math.sin(innerA) * radius * 0.45);
+            }
+            ctx.closePath();
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function spawnBurst(x, y, color, count = 20) {
+            for (let i = 0; i < count; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const spd = Math.random() * 3.8 + 1;
+                particles.push({
+                    x, y,
+                    vx: Math.cos(a) * spd,
+                    vy: Math.sin(a) * spd,
+                    size: Math.random() * 3 + 1.5,
+                    color,
+                    alpha: 1
+                });
+            }
+        }
+
+        function awardCoins(amount, label) {
+            profile.coins += amount;
+            saveProfile();
+            floatingPopups.push({
+                x: boardSize / 2,
+                y: boardSize / 2,
+                text: label,
+                alpha: 1.0
+            });
+        }
+
+        // --- CANVAS CLICK / TAP TO MOVE TOKENS ---
+        canvas.addEventListener('pointerdown', (e) => {
+            audio.init();
+            if (isLobbyOpen || turnPhase !== 'WAIT_MOVE' || playerRoles[currentTurn] !== 'HUMAN') return;
+
+            const rect = canvas.getBoundingClientRect();
+            const clickX = (e.clientX - rect.left) * (canvas.width / rect.width);
+            const clickY = (e.clientY - rect.top) * (canvas.height / rect.height);
+
+            let bestTok = null;
+            let bestDist = cellSize * 0.75;
+
+            for (const tok of validTokenMoves) {
+                const d = Math.hypot(clickX - (tok.renderX || tok.x * cellSize), clickY - (tok.renderY || tok.y * cellSize));
+                if (d < bestDist) {
+                    bestDist = d;
+                    bestTok = tok;
+                }
+            }
+
+            if (bestTok) {
+                executeTokenMove(bestTok, diceValue);
+            }
+        });
+
+        // --- UI, LOBBY & HUD UPDATES ---
+        function updateHeaderEconomyUI() {
+            document.getElementById('hudCoins').textContent = profile.coins.toLocaleString();
+            document.getElementById('shopCoins').textContent = profile.coins.toLocaleString();
+            document.getElementById('hudWins').textContent = profile.wins;
+            document.getElementById('hudCuts').textContent = profile.cuts;
+
+            document.getElementById('lobbyCoins').textContent = profile.coins.toLocaleString();
+            document.getElementById('lobbyWins').textContent = profile.wins;
+            document.getElementById('lobbyCrowns').textContent = profile.crowns || 0;
+            document.getElementById('lobbyCuts').textContent = profile.cuts;
+
+            const today = new Date().toISOString().slice(0, 10);
+            const dailyClaimed = profile.lastDailyDate === today;
+            const dailyBtn = document.getElementById('btnDailyBonus');
+            const dailySub = document.getElementById('dailyBonusSub');
+            if (dailyBtn && dailySub) {
+                dailyBtn.disabled = dailyClaimed;
+                dailyBtn.style.opacity = dailyClaimed ? '0.55' : '1';
+                dailySub.textContent = dailyClaimed ? 'CLAIMED TODAY' : 'CLAIM DAILY';
+            }
+
+            const theme = getActiveBoardTheme();
+            const shortEl = document.getElementById('themeShortLabel');
+            if (shortEl) shortEl.textContent = theme.short;
+        }
+
+        function syncLobbyUI() {
+            updateHeaderEconomyUI();
+
+            // Sync Mode Cards
+            const cardClassic = document.getElementById('cardModeClassic');
+            const cardRush = document.getElementById('cardModeRush');
+            const badgeClassic = document.getElementById('badgeClassic');
+            const badgeRush = document.getElementById('badgeRush');
+
+            if (!quickRushMode) {
+                cardClassic.className = 'text-left p-2.5 rounded-2xl border-2 border-cyan-400 bg-cyan-950/35 transition-all';
+                cardRush.className = 'text-left p-2.5 rounded-2xl border border-slate-700 bg-slate-900/60 transition-all';
+                badgeClassic.classList.remove('hidden');
+                badgeRush.classList.add('hidden');
+            } else {
+                cardClassic.className = 'text-left p-2.5 rounded-2xl border border-slate-700 bg-slate-900/60 transition-all';
+                cardRush.className = 'text-left p-2.5 rounded-2xl border-2 border-amber-400 bg-amber-950/35 transition-all';
+                badgeClassic.classList.add('hidden');
+                badgeRush.classList.remove('hidden');
+            }
+
+            // Sync 4 Faction Seats in Lobby & Board Cards
+            for (let i = 0; i < 4; i++) {
+                const role = playerRoles[i];
+                const labelText = role === 'HUMAN' ? 'HUMAN' : (role === 'AI' ? 'SMART AI' : 'OFF');
+                const lobbyBadge = document.getElementById(`lobbySeatLabel-${i}`);
+                if (lobbyBadge) {
+                    lobbyBadge.textContent = labelText;
+                    lobbyBadge.style.opacity = role === 'OFF' ? '0.45' : '1';
+                }
+                const boardBtn = document.querySelector(`.role-toggle[data-player="${i}"]`);
+                if (boardBtn) {
+                    boardBtn.textContent = labelText;
+                }
+            }
+        }
+
+        function updatePlayerCardsUI() {
+            const needed = quickRushMode ? 2 : 4;
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`crown-${i}`).textContent = `${playerStats[i] ? playerStats[i].crowned : 0}/${needed}`;
+                document.getElementById(`cuts-${i}`).textContent = playerStats[i] ? playerStats[i].cuts : 0;
+                const card = document.getElementById(`card-${i}`);
+                card.style.opacity = playerRoles[i] === 'OFF' ? '0.4' : '1';
+                if (i === currentTurn) {
+                    card.classList.add('ring-2', 'ring-white/60');
+                } else {
+                    card.classList.remove('ring-2', 'ring-white/60');
+                }
+            }
+        }
+
+        function updateTurnUI() {
+            const p = PLAYERS[currentTurn];
+            const titleEl = document.getElementById('turnTitle');
+            const subEl = document.getElementById('turnSub');
+            const rollBtn = document.getElementById('btnRollDice');
+
+            titleEl.textContent = `${p.name}'S TURN`;
+            titleEl.style.color = p.color;
+
+            document.documentElement.style.setProperty('--dice-color', p.color);
+            document.documentElement.style.setProperty('--dice-glow', p.glow);
+
+            const isHuman = playerRoles[currentTurn] === 'HUMAN';
+            rollBtn.disabled = !(turnPhase === 'WAIT_ROLL' && isHuman);
+
+            if (turnPhase === 'WAIT_ROLL') {
+                subEl.textContent = isHuman ? 'Tap 3D Cube or [SPACE]' : 'Smart AI Thinking...';
+            } else if (turnPhase === 'WAIT_MOVE') {
+                subEl.textContent = isHuman ? `Rolled ${diceValue} — Tap a Token` : `AI Moving (${diceValue})...`;
+            }
+        }
+
+        function updateStreakDots() {
+            for (let i = 1; i <= 3; i++) {
+                const dot = document.getElementById(`streak-${i}`);
+                if (i <= consecutiveSixes) {
+                    dot.className = 'w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_#fbbf24]';
+                } else {
+                    dot.className = 'w-2 h-2 rounded-full bg-slate-800 border border-slate-600';
+                }
+            }
+        }
+
+        function setTicker(msg) {
+            document.getElementById('liveTicker').textContent = msg;
+        }
+
+        function showPlayerEmote(playerIdx, text) {
+            const container = document.getElementById(`emote-${playerIdx}`);
+            if (!container) return;
+            container.innerHTML = `<div class="emote-bubble cyber-panel px-2.5 py-1 rounded-full border border-cyan-400 text-[11px] font-bold text-white whitespace-nowrap shadow-lg">${text}</div>`;
+        }
+
+        // --- LEFT-TOP DRAG-TO-PULL & SWIPEABLE RIBBON DRAWER ---
+        const leftRibbonDrawer = document.getElementById('leftRibbonDrawer');
+        const ribbonTray = document.getElementById('ribbonTray');
+        const ribbonPullTab = document.getElementById('ribbonPullTab');
+        const ribbonTabText = document.getElementById('ribbonTabText');
+        const ribbonBackdrop = document.getElementById('ribbonBackdrop');
+
+        let ribbonOpen = false;
+        let isDraggingRibbon = false;
+        let dragMoved = false;
+        let dragStartX = 0;
+        let dragStartTranslate = 0;
+        let currentDragTranslate = 0;
+        let trayWidth = 310;
+
+        function getClosedOffset() {
+            trayWidth = ribbonTray ? ribbonTray.offsetWidth : 310;
+            return -trayWidth;
+        }
+
+        function setRibbonOpen(state) {
+            ribbonOpen = Boolean(state);
+            if (!leftRibbonDrawer) return;
+            leftRibbonDrawer.classList.remove('dragging');
+            leftRibbonDrawer.style.transform = '';
+            leftRibbonDrawer.classList.toggle('open', ribbonOpen);
+            if (ribbonBackdrop) {
+                ribbonBackdrop.classList.toggle('active', ribbonOpen);
+            }
+            if (ribbonTabText) {
+                ribbonTabText.textContent = ribbonOpen ? 'HIDE' : 'PULL';
+            }
+        }
+
+        function syncRibbonStateUI(mutedOverride = null) {
+            const isMuted = mutedOverride !== null ? mutedOverride : audio.muted;
+            const audioIcon = document.getElementById('ribbonAudioIcon');
+            const audioLabel = document.getElementById('ribbonAudioLabel');
+            if (audioIcon) audioIcon.textContent = isMuted ? '🔇' : '🔊';
+            if (audioLabel) audioLabel.textContent = isMuted ? 'MUTED' : 'SOUND';
+
+            const lobbyAudioIcon = document.getElementById('lobbyAudioIcon');
+            const lobbyAudioText = document.getElementById('lobbyAudioText');
+            if (lobbyAudioIcon) lobbyAudioIcon.textContent = isMuted ? '🔇' : '🔊';
+            if (lobbyAudioText) lobbyAudioText.textContent = isMuted ? 'AUDIO: OFF' : 'AUDIO: ON';
+
+            const modeIcon = document.getElementById('ribbonModeIcon');
+            const modeLabel = document.getElementById('ribbonModeLabel');
+            if (modeIcon) modeIcon.textContent = quickRushMode ? '⚡' : '👑';
+            if (modeLabel) modeLabel.textContent = quickRushMode ? 'RUSH' : 'CLASSIC';
+
+            syncLobbyUI();
+        }
+
+        ribbonPullTab.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            audio.init();
+            isDraggingRibbon = true;
+            dragMoved = false;
+            dragStartX = e.clientX;
+            const closedOffset = getClosedOffset();
+            dragStartTranslate = ribbonOpen ? 0 : closedOffset;
+            currentDragTranslate = dragStartTranslate;
+            leftRibbonDrawer.classList.add('dragging');
+            if (ribbonPullTab.setPointerCapture) {
+                try { ribbonPullTab.setPointerCapture(e.pointerId); } catch (err) {}
+            }
+        });
+
+        ribbonPullTab.addEventListener('pointermove', (e) => {
+            if (!isDraggingRibbon) return;
+            const dx = e.clientX - dragStartX;
+            if (Math.abs(dx) > 5) dragMoved = true;
+
+            const closedOffset = getClosedOffset();
+            currentDragTranslate = Math.max(closedOffset, Math.min(0, dragStartTranslate + dx));
+            leftRibbonDrawer.style.transform = `translateX(${currentDragTranslate}px)`;
+
+            if (ribbonBackdrop) {
+                const progress = 1 - Math.abs(currentDragTranslate / (closedOffset || -1));
+                ribbonBackdrop.style.opacity = String(Math.max(0, Math.min(1, progress)));
+            }
+        });
+
+        function finishRibbonDrag() {
+            if (!isDraggingRibbon) return;
+            isDraggingRibbon = false;
+            if (ribbonBackdrop) ribbonBackdrop.style.opacity = '';
+
+            if (!dragMoved) {
+                audio.playStepHop(2);
+                setRibbonOpen(!ribbonOpen);
+                return;
+            }
+
+            const closedOffset = getClosedOffset();
+            const threshold = ribbonOpen ? closedOffset * 0.28 : closedOffset * 0.68;
+            const shouldOpen = currentDragTranslate > threshold;
+            audio.playStepHop(2);
+            setRibbonOpen(shouldOpen);
+        }
+
+        ribbonPullTab.addEventListener('pointerup', finishRibbonDrag);
+        ribbonPullTab.addEventListener('pointercancel', finishRibbonDrag);
+
+        if (ribbonBackdrop) {
+            ribbonBackdrop.addEventListener('pointerdown', () => setRibbonOpen(false));
+        }
+
+        // Edge Touch Swipe Right to Pull Open / Swipe Left to Collapse
+        let touchSwipeStartX = null;
+        let touchSwipeStartY = null;
+
+        window.addEventListener('touchstart', (e) => {
+            if (isDraggingRibbon || !e.touches || e.touches.length !== 1) return;
+            const t = e.touches[0];
+            if ((!ribbonOpen && t.clientX <= 44 && t.clientY <= 220) || ribbonOpen) {
+                touchSwipeStartX = t.clientX;
+                touchSwipeStartY = t.clientY;
+            } else {
+                touchSwipeStartX = null;
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchend', (e) => {
+            if (isDraggingRibbon || touchSwipeStartX === null || !e.changedTouches || e.changedTouches.length === 0) return;
+            const t = e.changedTouches[0];
+            const dx = t.clientX - touchSwipeStartX;
+            const dy = Math.abs(t.clientY - touchSwipeStartY);
+
+            if (dy < 70) {
+                if (!ribbonOpen && dx > 32) {
+                    audio.init();
+                    audio.playStepHop(2);
+                    setRibbonOpen(true);
+                } else if (ribbonOpen && dx < -32) {
+                    setRibbonOpen(false);
+                }
+            }
+            touchSwipeStartX = null;
+        }, { passive: true });
+
+        // --- COSMETIC SHOP & CONTROLS ---
+        function renderShopModal() {
+            updateHeaderEconomyUI();
+            const skinList = document.getElementById('skinShopList');
+            const themeList = document.getElementById('themeShopList');
+            skinList.innerHTML = '';
+            themeList.innerHTML = '';
+
+            TOKEN_SKINS.forEach(s => {
+                const unlocked = profile.unlockedSkins.includes(s.id);
+                const active = profile.activeSkin === s.id;
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900/90 p-2.5 rounded-xl border border-slate-700 flex flex-col justify-between';
+                card.innerHTML = `
+                    <div>
+                        <div class="font-orbitron text-xs font-bold text-white">${s.name}</div>
+                        <div class="text-[10px] text-slate-400 mb-2">${s.desc}</div>
+                    </div>
+                    <button class="w-full py-1.5 rounded-lg font-orbitron text-[10px] font-bold ${active ? 'bg-emerald-600/40 text-emerald-300 border border-emerald-400' : 'cyber-btn text-white'}">
+                        ${active ? '✓ EQUIPPED' : (unlocked ? 'EQUIP' : `UNLOCK 🪙 ${s.cost}`)}
+                    </button>
+                `;
+                card.querySelector('button').addEventListener('click', () => {
+                    if (unlocked) {
+                        profile.activeSkin = s.id;
+                        saveProfile();
+                        renderShopModal();
+                    } else if (profile.coins >= s.cost) {
+                        profile.coins -= s.cost;
+                        profile.unlockedSkins.push(s.id);
+                        profile.activeSkin = s.id;
+                        audio.playCrownFanfare();
+                        saveProfile();
+                        renderShopModal();
+                    }
+                });
+                skinList.appendChild(card);
+            });
+
+            BOARD_THEMES.forEach(th => {
+                const unlocked = profile.unlockedThemes.includes(th.id);
+                const active = profile.activeTheme === th.id;
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900/90 p-2.5 rounded-xl border border-slate-700 flex flex-col justify-between';
+                card.innerHTML = `
+                    <div>
+                        <div class="font-orbitron text-xs font-bold text-white">${th.name}</div>
+                        <div class="text-[10px] text-slate-400 mb-2">Arena Palette</div>
+                    </div>
+                    <button class="w-full py-1.5 rounded-lg font-orbitron text-[10px] font-bold ${active ? 'bg-emerald-600/40 text-emerald-300 border border-emerald-400' : 'cyber-btn text-white'}">
+                        ${active ? '✓ ACTIVE' : (unlocked ? 'ACTIVATE' : `UNLOCK 🪙 ${th.cost}`)}
+                    </button>
+                `;
+                card.querySelector('button').addEventListener('click', () => {
+                    if (unlocked) {
+                        profile.activeTheme = th.id;
+                        saveProfile();
+                        renderShopModal();
+                    } else if (profile.coins >= th.cost) {
+                        profile.coins -= th.cost;
+                        profile.unlockedThemes.push(th.id);
+                        profile.activeTheme = th.id;
+                        audio.playCrownFanfare();
+                        saveProfile();
+                        renderShopModal();
+                    }
+                });
+                themeList.appendChild(card);
+            });
+        }
+
+        // --- LOBBY EVENT LISTENERS ---
+        document.getElementById('cardModeClassic').addEventListener('click', () => {
+            audio.init();
+            audio.playStepHop(1);
+            quickRushMode = false;
+            syncRibbonStateUI();
+        });
+
+        document.getElementById('cardModeRush').addEventListener('click', () => {
+            audio.init();
+            audio.playStepHop(2);
+            quickRushMode = true;
+            syncRibbonStateUI();
+        });
+
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                audio.init();
+                audio.playStepHop(3);
+                const preset = btn.getAttribute('data-preset');
+                if (preset === '1v3') {
+                    playerRoles = ['HUMAN', 'AI', 'AI', 'AI'];
+                } else if (preset === '1v1') {
+                    playerRoles = ['HUMAN', 'OFF', 'AI', 'OFF'];
+                } else if (preset === '4p') {
+                    playerRoles = ['HUMAN', 'HUMAN', 'HUMAN', 'HUMAN'];
+                }
+                syncLobbyUI();
+            });
+        });
+
+        document.querySelectorAll('.lobby-seat-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                audio.init();
+                audio.playStepHop(2);
+                const idx = Number(btn.getAttribute('data-lobby-seat'));
+                const cycle = ['HUMAN', 'AI', 'OFF'];
+                const nextRole = cycle[(cycle.indexOf(playerRoles[idx]) + 1) % cycle.length];
+                playerRoles[idx] = nextRole;
+                ensureValidPlayerRoles();
+                syncLobbyUI();
+            });
+        });
+
+        document.getElementById('btnDailyBonus').addEventListener('click', () => {
+            audio.init();
+            const today = new Date().toISOString().slice(0, 10);
+            if (profile.lastDailyDate === today) return;
+            profile.lastDailyDate = today;
+            profile.coins += 100;
+            audio.playCrownFanfare();
+            saveProfile();
+        });
+
+        document.getElementById('btnLaunchMatchLobby').addEventListener('click', () => {
+            audio.init();
+            audio.playCrownFanfare();
+            isLobbyOpen = false;
+            document.getElementById('homeScreenLobby').classList.add('hidden');
+            document.getElementById('homeScreenLobby').classList.remove('flex');
+            resizeBoard();
+            initMatch();
+        });
+
+        document.getElementById('btnResumeMatchLobby').addEventListener('click', () => {
+            audio.init();
+            audio.playStepHop(4);
+            closeHomeLobbyAndResume();
+        });
+
+        document.getElementById('btnLobbyShop').addEventListener('click', () => {
+            audio.init();
+            renderShopModal();
+            document.getElementById('shopModal').classList.remove('hidden');
+            document.getElementById('shopModal').classList.add('flex');
+        });
+
+        document.getElementById('btnLobbyAudio').addEventListener('click', () => {
+            audio.init();
+            const muted = audio.toggleMute();
+            syncRibbonStateUI(muted);
+        });
+
+        // Board & Ribbon Event Bindings
+        document.getElementById('btnRollDice').addEventListener('click', triggerRollDice);
+        document.getElementById('diceScene').addEventListener('click', () => {
+            if (!isLobbyOpen && turnPhase === 'WAIT_ROLL' && playerRoles[currentTurn] === 'HUMAN') triggerRollDice();
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (!isLobbyOpen && e.code === 'Space' && turnPhase === 'WAIT_ROLL' && playerRoles[currentTurn] === 'HUMAN') {
+                e.preventDefault();
+                triggerRollDice();
+            }
+            if (e.code === 'KeyM') {
+                const muted = audio.toggleMute();
+                syncRibbonStateUI(muted);
+            }
+        });
+
+        document.querySelectorAll('.role-toggle').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = Number(btn.getAttribute('data-player'));
+                if (playerRoles[idx] === 'OFF') return;
+                playerRoles[idx] = playerRoles[idx] === 'HUMAN' ? 'AI' : 'HUMAN';
+                btn.textContent = playerRoles[idx] === 'HUMAN' ? 'HUMAN' : 'SMART AI';
+                syncLobbyUI();
+                updateTurnUI();
+                if (!isLobbyOpen && idx === currentTurn && turnPhase === 'WAIT_ROLL' && playerRoles[idx] === 'AI') {
+                    triggerRollDice();
+                }
+            });
+        });
+
+        document.querySelectorAll('.emote-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                audio.init();
+                audio.playStepHop(3);
+                const msg = btn.getAttribute('data-emote');
+                showPlayerEmote(0, msg);
+            });
+        });
+
+        // Ribbon & Header Navigation Buttons
+        document.getElementById('btnRibbonHome').addEventListener('click', openHomeLobby);
+        document.getElementById('btnTopHome').addEventListener('click', openHomeLobby);
+        document.getElementById('btnVictoryHome').addEventListener('click', () => {
+            document.getElementById('victoryModal').classList.add('hidden');
+            document.getElementById('victoryModal').classList.remove('flex');
+            openHomeLobby();
+        });
+
+        document.getElementById('btnShop').addEventListener('click', () => {
+            setRibbonOpen(false);
+            renderShopModal();
+            document.getElementById('shopModal').classList.remove('hidden');
+            document.getElementById('shopModal').classList.add('flex');
+        });
+        document.getElementById('btnCoinHud').addEventListener('click', () => {
+            renderShopModal();
+            document.getElementById('shopModal').classList.remove('hidden');
+            document.getElementById('shopModal').classList.add('flex');
+        });
+        document.getElementById('btnCloseShop').addEventListener('click', () => {
+            document.getElementById('shopModal').classList.add('hidden');
+            document.getElementById('shopModal').classList.remove('flex');
+        });
+
+        document.getElementById('btnAudio').addEventListener('click', () => {
+            audio.init();
+            const muted = audio.toggleMute();
+            syncRibbonStateUI(muted);
+        });
+
+        document.getElementById('btnRibbonMode').addEventListener('click', () => {
+            quickRushMode = !quickRushMode;
+            setRibbonOpen(false);
+            initMatch();
+        });
+
+        document.getElementById('btnRibbonRestart').addEventListener('click', () => {
+            setRibbonOpen(false);
+            initMatch();
+        });
+
+        document.getElementById('btnCycleTheme').addEventListener('click', () => {
+            const idx = BOARD_THEMES.findIndex(t => t.id === profile.activeTheme);
+            const next = BOARD_THEMES[(idx + 1) % BOARD_THEMES.length];
+            profile.activeTheme = next.id;
+            saveProfile();
+        });
+
+        document.getElementById('btnPlayAgain').addEventListener('click', () => initMatch());
+
+        window.onload = function () {
+            resizeBoard();
+            updateHeaderEconomyUI();
+            initMatch();
+            openHomeLobby();
+            requestAnimationFrame(renderBoard);
+        };
+    </script>
+</body>
+</html>
