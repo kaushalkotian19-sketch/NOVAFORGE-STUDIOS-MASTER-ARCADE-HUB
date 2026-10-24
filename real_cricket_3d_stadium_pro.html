@@ -1,0 +1,2268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NOVAFORGE STUDIOS // REAL CRICKET 3D: STADIUM PRO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #030712;
+            font-family: 'Rajdhani', sans-serif;
+            color: #f8fafc;
+            touch-action: none;
+        }
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        #webglContainer {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .pro-panel {
+            background: rgba(7, 12, 24, 0.88);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(56, 189, 248, 0.32);
+            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.82), inset 0 0 15px rgba(56, 189, 248, 0.08);
+        }
+        .pro-btn {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.22) 0%, rgba(37, 99, 235, 0.36) 100%);
+            border: 1px solid rgba(56, 189, 248, 0.6);
+            box-shadow: 0 0 14px rgba(14, 165, 233, 0.22);
+            transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .pro-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.38) 0%, rgba(37, 99, 235, 0.54) 100%);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+            transform: translateY(-1px);
+        }
+        .pro-btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+        .pro-btn-gold {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.28) 0%, rgba(217, 119, 6, 0.44) 100%);
+            border: 1px solid rgba(251, 191, 36, 0.85);
+            box-shadow: 0 0 16px rgba(245, 158, 11, 0.3);
+            transition: all 0.16s ease;
+        }
+        .pro-btn-gold:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.45) 0%, rgba(217, 119, 6, 0.62) 100%);
+            box-shadow: 0 0 24px rgba(251, 191, 36, 0.6);
+            transform: translateY(-1px);
+        }
+        .pro-btn-emerald {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.28) 0%, rgba(5, 150, 105, 0.46) 100%);
+            border: 1px solid rgba(52, 211, 153, 0.85);
+            box-shadow: 0 0 16px rgba(16, 185, 129, 0.3);
+            transition: all 0.16s ease;
+        }
+        .pro-btn-emerald:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.46) 0%, rgba(5, 150, 105, 0.64) 100%);
+            box-shadow: 0 0 24px rgba(52, 211, 153, 0.6);
+            transform: translateY(-1px);
+        }
+        .pro-btn-crimson {
+            background: linear-gradient(135deg, rgba(244, 63, 94, 0.28) 0%, rgba(190, 18, 60, 0.46) 100%);
+            border: 1px solid rgba(251, 113, 133, 0.85);
+            box-shadow: 0 0 16px rgba(244, 63, 94, 0.3);
+            transition: all 0.16s ease;
+        }
+
+        /* UPPER-LEFT DRAG-TO-PULL 2x3 RIBBON DRAWER */
+        #ribbonBackdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 18, 0.56);
+            backdrop-filter: blur(2px);
+            z-index: 75;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        #ribbonBackdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #leftRibbonDrawer {
+            position: fixed;
+            top: 8px;
+            left: 0;
+            z-index: 80;
+            display: flex;
+            align-items: stretch;
+            max-width: calc(100vw - 10px);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translateX(calc(-100% + 40px));
+            filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.9));
+            will-change: transform;
+        }
+        #leftRibbonDrawer.dragging {
+            transition: none !important;
+        }
+        #leftRibbonDrawer.open {
+            transform: translateX(0);
+        }
+        .ribbon-tray {
+            background: rgba(7, 12, 24, 0.97);
+            backdrop-filter: blur(18px);
+            border-top: 1px solid rgba(56, 189, 248, 0.55);
+            border-bottom: 1px solid rgba(56, 189, 248, 0.55);
+            padding: 8px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            width: min(326px, calc(100vw - 54px));
+            box-shadow: inset 0 0 18px rgba(56, 189, 248, 0.08);
+        }
+        .ribbon-tray button {
+            width: 100%;
+            justify-content: center;
+            padding: 7px 5px;
+        }
+        .ribbon-pull-tab {
+            width: 40px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.36) 0%, rgba(15, 23, 42, 0.98) 100%);
+            border: 1px solid rgba(56, 189, 248, 0.8);
+            border-left: 1px solid rgba(56, 189, 248, 0.25);
+            border-radius: 0 14px 14px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            cursor: grab;
+            padding: 8px 2px;
+            box-shadow: 4px 0 18px rgba(14, 165, 233, 0.35);
+            touch-action: none;
+        }
+        .ribbon-pull-tab:active {
+            cursor: grabbing;
+        }
+        .ribbon-grip-bars {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 1px;
+        }
+        .ribbon-grip-bars span {
+            width: 2px;
+            height: 10px;
+            border-radius: 1px;
+            background: rgba(56, 189, 248, 0.85);
+        }
+        .ribbon-chevron {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #leftRibbonDrawer.open .ribbon-chevron {
+            transform: rotate(180deg);
+        }
+
+        @keyframes popBanner {
+            0% { opacity: 0; transform: scale(0.75) translateY(12px); }
+            18% { opacity: 1; transform: scale(1.06) translateY(0px); }
+            82% { opacity: 1; transform: scale(1) translateY(0px); }
+            100% { opacity: 0; transform: scale(0.9) translateY(-14px); }
+        }
+        .broadcast-banner-anim {
+            animation: popBanner 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="select-none">
+
+    <!-- 3D WebGL Stadium Viewport -->
+    <div id="webglContainer"></div>
+
+    <!-- Backdrop Dimmer for Upper-Left Pull Ribbon -->
+    <div id="ribbonBackdrop" aria-hidden="true"></div>
+
+    <!-- ========================================================================= -->
+    <!-- 1. UPPER-LEFT DRAG-TO-PULL 2x3 COMPACT RIBBON DRAWER                      -->
+    <!-- ========================================================================= -->
+    <div id="leftRibbonDrawer" aria-label="Quick Action Pull Ribbon">
+        <div class="ribbon-tray" id="ribbonTray">
+            <!-- 1. HOME -->
+            <button id="btnRibbonHome" class="pro-btn-emerald rounded-xl text-[10px] sm:text-xs font-orbitron text-white font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🏠</span> <span>HOME</span>
+            </button>
+            <!-- 2. CAM VIEW -->
+            <button id="btnRibbonCam" class="pro-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-sky-200 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🎥</span> <span id="ribbonCamLabel">POV CAM</span>
+            </button>
+            <!-- 3. PRO SHOP -->
+            <button id="btnRibbonShop" class="pro-btn-gold rounded-xl text-[10px] sm:text-xs font-orbitron text-white font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🎨</span> <span>PRO SHOP</span>
+            </button>
+            <!-- 4. AUDIO -->
+            <button id="btnRibbonAudio" class="pro-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-cyan-200 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span id="ribbonAudioIcon">🔊</span> <span id="ribbonAudioLabel">AUDIO</span>
+            </button>
+            <!-- 5. HAWK-EYE -->
+            <button id="btnRibbonHawkeye" class="pro-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-amber-300 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>📊</span> <span>HAWK-EYE</span>
+            </button>
+            <!-- 6. RESTART -->
+            <button id="btnRibbonRestart" class="pro-btn-crimson rounded-xl text-[10px] sm:text-xs font-orbitron text-rose-200 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🔄</span> <span>RESTART</span>
+            </button>
+        </div>
+
+        <!-- Always-Visible Drag-to-Pull Handle -->
+        <button id="ribbonPullTab" class="ribbon-pull-tab" title="Drag/Pull Out or Tap to Toggle Menu">
+            <div class="ribbon-grip-bars"><span></span><span></span></div>
+            <span class="ribbon-chevron text-sky-300 text-xs font-black leading-none">❯</span>
+            <span id="ribbonTabText" class="font-orbitron text-[8px] font-bold tracking-widest text-sky-200 uppercase leading-none" style="writing-mode: vertical-rl; text-orientation: mixed;">PULL</span>
+        </button>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 2. HOME SCREEN LOBBY (#homeLobby) - Live 3D Stadium Flyover Background    -->
+    <!-- ========================================================================= -->
+    <div id="homeLobby" class="fixed inset-0 z-40 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/60 backdrop-blur-md overflow-y-auto">
+        <div class="pro-panel rounded-3xl p-4 sm:p-6 max-w-xl w-full border border-sky-400/45 shadow-[0_0_60px_rgba(14,165,233,0.22)] my-auto flex flex-col gap-3">
+
+            <!-- Broadcast Studio Header -->
+            <div class="flex items-center justify-between gap-3 border-b border-slate-800/90 pb-2.5">
+                <div class="min-w-0">
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-sky-950/90 border border-sky-500/40 text-sky-300 text-[9px] sm:text-[10px] font-orbitron tracking-widest uppercase mb-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping"></span>
+                        NOVAFORGE STUDIOS // 3D WEBGL ENGINE
+                    </div>
+                    <h1 class="font-orbitron text-2xl sm:text-3xl font-black tracking-tight text-white leading-none">
+                        REAL CRICKET 3D
+                    </h1>
+                    <div class="font-orbitron text-xs sm:text-sm font-bold tracking-[0.22em] text-amber-400 mt-0.5">
+                        STADIUM PRO EDITION
+                    </div>
+                </div>
+
+                <div class="w-14 h-14 rounded-2xl bg-slate-950/90 border border-amber-400/50 flex flex-col items-center justify-center shadow-[0_0_24px_rgba(251,191,36,0.3)] shrink-0">
+                    <span class="text-2xl leading-none">🏟️</span>
+                    <span class="font-orbitron text-[8px] font-bold text-sky-300 tracking-wider mt-0.5">3D PRO</span>
+                </div>
+            </div>
+
+            <!-- Career Stats, Pro-Coins & Claimable Daily Bonus -->
+            <div class="grid grid-cols-5 gap-1.5 bg-slate-950/85 p-2 rounded-2xl border border-slate-800 items-center text-center">
+                <div>
+                    <div class="text-[8px] sm:text-[9px] text-slate-400 uppercase font-orbitron">PRO-COINS</div>
+                    <div class="font-orbitron text-xs sm:text-sm font-black text-amber-400">🪙 <span id="lobbyCoins">400</span></div>
+                </div>
+                <div class="border-l border-slate-800">
+                    <div class="text-[8px] sm:text-[9px] text-slate-400 uppercase font-orbitron">WINS / BEST</div>
+                    <div class="font-orbitron text-xs sm:text-sm font-black text-emerald-300">🏆<span id="lobbyWins">0</span> ⭐<span id="lobbyBest">0</span></div>
+                </div>
+                <div class="border-l border-slate-800">
+                    <div class="text-[8px] sm:text-[9px] text-slate-400 uppercase font-orbitron">TOTAL 6s</div>
+                    <div class="font-orbitron text-xs sm:text-sm font-black text-sky-300">🚀 <span id="lobbySixes">0</span></div>
+                </div>
+                <div class="border-x border-slate-800">
+                    <div class="text-[8px] sm:text-[9px] text-slate-400 uppercase font-orbitron">LONGEST 6</div>
+                    <div class="font-orbitron text-xs sm:text-sm font-black text-fuchsia-300"><span id="lobbyMaxDist">0</span>m</div>
+                </div>
+                <div class="pl-0.5">
+                    <button id="btnDailyBonus" class="pro-btn-gold w-full py-1.5 px-1 rounded-xl font-orbitron text-[8px] sm:text-[9px] font-bold text-white leading-tight">
+                        🎁 +200 🪙<br><span id="dailyBonusSub" class="text-[7px] text-amber-200">DAILY BONUS</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 1. Match Format & Camera View Selector -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                    <div class="text-[10px] font-orbitron font-bold uppercase tracking-wider text-sky-300 mb-1">
+                        1. MATCH FORMAT
+                    </div>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <button data-format="BLITZ_2" class="format-btn p-2 rounded-xl border-2 border-sky-400 bg-sky-950/40 text-left">
+                            <div class="font-orbitron text-[10px] font-black text-white">⚡ 2-OV</div>
+                            <div class="text-[9px] text-slate-300">Super Blitz</div>
+                        </button>
+                        <button data-format="CLASH_5" class="format-btn p-2 rounded-xl border border-slate-700 bg-slate-900/60 text-left">
+                            <div class="font-orbitron text-[10px] font-black text-amber-300">🔥 5-OV</div>
+                            <div class="text-[9px] text-slate-300">Premier</div>
+                        </button>
+                        <button data-format="SUPER_1" class="format-btn p-2 rounded-xl border border-slate-700 bg-slate-900/60 text-left">
+                            <div class="font-orbitron text-[10px] font-black text-rose-300">🏆 1-OV</div>
+                            <div class="text-[9px] text-slate-300">Super Over</div>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="text-[10px] font-orbitron font-bold uppercase tracking-wider text-sky-300 mb-1">
+                        2. DEFAULT CAMERA ANGLE
+                    </div>
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <button data-cam="POV" class="cam-select-btn p-2 rounded-xl border-2 border-emerald-400 bg-emerald-950/40 text-left">
+                            <div class="font-orbitron text-[10px] font-black text-white">🎥 BATSMAN POV</div>
+                            <div class="text-[9px] text-slate-300">Close Behind Stumps</div>
+                        </button>
+                        <button data-cam="TV" class="cam-select-btn p-2 rounded-xl border border-slate-700 bg-slate-900/60 text-left">
+                            <div class="font-orbitron text-[10px] font-black text-sky-300">📺 TV BROADCAST</div>
+                            <div class="text-[9px] text-slate-300">High Stadium Lens</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Team Franchise Selector -->
+            <div>
+                <div class="text-[10px] font-orbitron font-bold uppercase tracking-wider text-sky-300 mb-1">
+                    3. SELECT NATIONAL / FRANCHISE SQUAD (3D KIT COLORS)
+                </div>
+                <div id="lobbyTeamGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <!-- Launch, Resume & Secondary Buttons -->
+            <div class="flex flex-col gap-2 pt-1">
+                <button id="btnResumeLobby" class="hidden pro-btn w-full py-2.5 rounded-2xl font-orbitron text-xs sm:text-sm font-black text-sky-200 items-center justify-center gap-2">
+                    <span>▶</span> <span>RESUME ACTIVE 3D MATCH</span>
+                </button>
+                <button id="btnLaunchMatch" class="pro-btn-emerald w-full py-3.5 rounded-2xl font-orbitron text-sm sm:text-base font-black text-white flex items-center justify-center gap-2 shadow-lg">
+                    <span>🚀</span> <span>LAUNCH 3D STADIUM MATCH</span>
+                </button>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btnLobbyShop" class="pro-btn-gold py-2 rounded-xl font-orbitron text-xs font-bold text-white flex items-center justify-center gap-1.5">
+                        <span>🎨</span> <span>3D BAT &amp; STADIUM SHOP</span>
+                    </button>
+                    <button id="btnLobbyHawkeye" class="pro-btn py-2 rounded-xl font-orbitron text-xs font-bold text-sky-200 flex items-center justify-center gap-1.5">
+                        <span>📊</span> <span>HAWK-EYE &amp; WAGON WHEEL</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 3. IN-GAME TV BROADCAST HUD & 3D CONTROLS                                 -->
+    <!-- ========================================================================= -->
+    <div id="gameHud" class="fixed inset-0 z-10 pointer-events-none flex flex-col justify-between p-2 sm:p-3">
+
+        <!-- Top TV Broadcast Scorebug Bar -->
+        <div class="w-full max-w-5xl mx-auto pl-11 pr-1 flex flex-wrap items-center justify-between gap-2 pointer-events-auto">
+            <!-- Left: Team Scorebug, Overs, CRR & Target -->
+            <div class="pro-panel rounded-2xl px-3 py-1.5 flex items-center gap-3 border border-sky-400/45">
+                <div class="flex items-center gap-2">
+                    <div id="hudTeamBadge" class="w-8 h-8 rounded-xl flex items-center justify-center font-orbitron text-[10px] font-black text-white shadow-md" style="background:#0284c7;">
+                        IND
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-1.5">
+                            <span id="hudTeamName" class="font-orbitron text-[10px] sm:text-xs font-bold text-sky-300">INDIA BLUE</span>
+                            <span id="hudRolePill" class="px-1.5 py-0.2 rounded bg-emerald-500/20 border border-emerald-400/40 font-orbitron text-[8px] text-emerald-300">BATTING</span>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <span id="hudScoreMain" class="font-orbitron text-lg sm:text-2xl font-black text-white leading-none">0/0</span>
+                            <span id="hudOversMain" class="font-orbitron text-[11px] text-slate-300">(0.0 / 2.0)</span>
+                            <span id="hudCrrText" class="font-orbitron text-[10px] text-sky-300 hidden sm:inline">CRR: 0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="h-8 w-px bg-slate-800"></div>
+
+                <!-- Target & This Over Timeline Pills -->
+                <div class="text-xs">
+                    <div id="hudTargetInfo" class="font-orbitron text-[10px] sm:text-xs font-bold text-amber-300">
+                        1ST INNINGS // SET BIG TOTAL
+                    </div>
+                    <div class="flex items-center gap-1 mt-0.5">
+                        <span class="text-[9px] font-orbitron text-slate-400">OVER:</span>
+                        <div id="hudOverPills" class="flex items-center gap-1"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Speed Gun, Six Distance Meter, Cam Toggle & Coins -->
+            <div class="pro-panel rounded-2xl px-3 py-1.5 flex items-center gap-2.5 border border-amber-400/40">
+                <div class="text-right">
+                    <div class="text-[9px] font-orbitron text-slate-400 uppercase">SPEED / SIX DIST</div>
+                    <div class="font-orbitron text-xs sm:text-sm font-black text-amber-300">
+                        <span id="hudSpeedGun">--.- KPH</span>
+                        <span class="text-slate-600 mx-1">|</span>
+                        <span id="hudSixDistance" class="text-emerald-300">-- M</span>
+                    </div>
+                </div>
+
+                <button id="btnHudCamSwitch" title="Switch 3D Broadcast Camera (C)" class="pro-btn px-2.5 py-1.5 rounded-xl font-orbitron text-[10px] font-bold text-sky-200 flex items-center gap-1">
+                    <span>🎥</span> <span id="hudCamText">POV</span>
+                </button>
+
+                <button id="btnHudCoins" title="Open 3D Bat & Stadium Shop" class="px-2.5 py-1.5 rounded-xl bg-slate-900 border border-amber-400/50 font-orbitron text-xs font-bold text-amber-300">
+                    🪙 <span id="hudCoins">400</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Center Dynamic Broadcast Telemetry & Pop-up Callout -->
+        <div class="w-full flex flex-col items-center justify-center pointer-events-none my-auto px-2">
+            <div id="centerCalloutContainer" class="h-14 flex items-center justify-center"></div>
+            <div id="telemetryBanner" class="pro-panel px-4 py-1 rounded-full border border-sky-400/50 font-orbitron text-[11px] sm:text-xs font-bold text-sky-200 shadow-lg">
+                BOWLER READY AT TOP OF MARK...
+            </div>
+        </div>
+
+        <!-- Bottom 3D Batting & Bowling Controls Dock -->
+        <div class="w-full max-w-2xl mx-auto pointer-events-auto">
+
+            <!-- A. 3D BATTING CONTROLS DOCK -->
+            <div id="battingDock" class="pro-panel rounded-2xl p-2.5 sm:p-3 border border-emerald-400/50 flex flex-col gap-2">
+                <!-- 360 Wagon-Wheel Aim Direction Selector (5 Sector Angles + Timing Bar) -->
+                <div class="flex flex-wrap items-center justify-between gap-1.5">
+                    <span class="text-[10px] font-orbitron text-slate-400 uppercase hidden sm:inline">360° SHOT PLACEMENT [A/D]:</span>
+                    <div class="grid grid-cols-5 gap-1 flex-1">
+                        <button data-angle="-0.95" class="shot-dir-btn pro-btn py-1 rounded-lg font-orbitron text-[9px] sm:text-[10px] font-bold text-sky-200">
+                            ↖ POINT / CUT
+                        </button>
+                        <button data-angle="-0.48" class="shot-dir-btn pro-btn py-1 rounded-lg font-orbitron text-[9px] sm:text-[10px] font-bold text-sky-200">
+                            ↖ COVERS
+                        </button>
+                        <button data-angle="0" class="shot-dir-btn pro-btn py-1 rounded-lg font-orbitron text-[9px] sm:text-[10px] font-bold text-white ring-2 ring-emerald-400">
+                            ⬆ STRAIGHT
+                        </button>
+                        <button data-angle="0.48" class="shot-dir-btn pro-btn py-1 rounded-lg font-orbitron text-[9px] sm:text-[10px] font-bold text-sky-200">
+                            ↗ MID-WICKET
+                        </button>
+                        <button data-angle="0.95" class="shot-dir-btn pro-btn py-1 rounded-lg font-orbitron text-[9px] sm:text-[10px] font-bold text-sky-200">
+                            ↗ FINE PULL
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3 Primary 3D Shot Buttons -->
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="btnShotDefend" class="pro-btn py-2.5 sm:py-3 rounded-xl font-orbitron text-xs sm:text-sm font-black text-sky-200 flex flex-col items-center justify-center">
+                        <span>🛡️ [1] PUSH SINGLE</span>
+                        <span class="text-[9px] font-normal text-slate-300">Safe Gap Placement</span>
+                    </button>
+
+                    <button id="btnShotDrive" class="pro-btn-emerald py-2.5 sm:py-3 rounded-xl font-orbitron text-xs sm:text-sm font-black text-white flex flex-col items-center justify-center shadow-lg">
+                        <span>🏏 [2] CLASSIC DRIVE</span>
+                        <span class="text-[9px] font-normal text-emerald-100">Crisp Carpet Four [SPACE]</span>
+                    </button>
+
+                    <button id="btnShotLoft" class="pro-btn-gold py-2.5 sm:py-3 rounded-xl font-orbitron text-xs sm:text-sm font-black text-white flex flex-col items-center justify-center shadow-lg">
+                        <span>🚀 [3] POWER LOFT SIX</span>
+                        <span class="text-[9px] font-normal text-amber-100">Launch Into Stands [W]</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- B. 3D BOWLING CONTROLS DOCK -->
+            <div id="bowlingDock" class="hidden pro-panel rounded-2xl p-2.5 sm:p-3 border border-amber-400/50 flex-col gap-2">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="font-orbitron text-[10px] sm:text-xs font-bold text-amber-300">
+                        🎯 DRAG/TAP 3D PITCH RING TO AIM LINE &amp; LENGTH:
+                    </span>
+                    <button id="btnQuickSimBowling" class="px-2.5 py-1 rounded-lg bg-slate-800 border border-amber-400/60 font-orbitron text-[10px] font-bold text-amber-300 hover:bg-slate-700">
+                        ⚡ QUICK-SIM OVER
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-4 gap-1.5">
+                    <button data-delivery="INSWING" class="delivery-type-btn pro-btn py-1.5 rounded-xl font-orbitron text-[10px] font-bold text-white ring-2 ring-amber-400">
+                        ⚡ INSWING<br><span class="text-[9px] text-sky-300">147 KPH</span>
+                    </button>
+                    <button data-delivery="YORKER" class="delivery-type-btn pro-btn py-1.5 rounded-xl font-orbitron text-[10px] font-bold text-white">
+                        🎯 YORKER<br><span class="text-[9px] text-emerald-300">144 KPH</span>
+                    </button>
+                    <button data-delivery="BOUNCER" class="delivery-type-btn pro-btn py-1.5 rounded-xl font-orbitron text-[10px] font-bold text-white">
+                        💥 BOUNCER<br><span class="text-[9px] text-rose-300">141 KPH</span>
+                    </button>
+                    <button data-delivery="LEGSPIN" class="delivery-type-btn pro-btn py-1.5 rounded-xl font-orbitron text-[10px] font-bold text-white">
+                        🌀 LEG-SPIN<br><span class="text-[9px] text-amber-300">94 KPH</span>
+                    </button>
+                </div>
+
+                <!-- Bowling Release Meter -->
+                <div class="flex items-center gap-2.5">
+                    <div class="flex-1 h-4 bg-slate-950 rounded-full overflow-hidden border border-slate-700 relative">
+                        <div class="absolute top-0 bottom-0 left-[42%] w-[16%] bg-emerald-500/55 border-x border-emerald-300"></div>
+                        <div id="bowlReleaseCursor" class="w-2.5 h-full bg-amber-400 shadow-[0_0_10px_#fbbf24] absolute top-0 left-0"></div>
+                    </div>
+                    <button id="btnBowlAction" class="pro-btn-gold px-5 py-2 rounded-xl font-orbitron text-xs sm:text-sm font-black text-white">
+                        ⚾ BOWL [SPACE]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 4. 3D PRO SHOP MODAL (#shopModal)                                         -->
+    <!-- ========================================================================= -->
+    <div id="shopModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="pro-panel rounded-3xl p-5 max-w-lg w-full max-h-[88vh] flex flex-col border border-amber-400/50">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+                <div>
+                    <span class="text-[10px] font-orbitron uppercase tracking-widest text-amber-400 block">NOVAFORGE PRO ARMORY</span>
+                    <h2 class="font-orbitron text-xl font-black text-white">3D BATS &amp; STADIUM LIGHTING</h2>
+                </div>
+                <div class="px-3 py-1 rounded-full bg-slate-900 border border-amber-400/40 font-orbitron text-xs font-bold text-amber-300">
+                    🪙 <span id="shopCoins">400</span>
+                </div>
+            </div>
+
+            <div class="overflow-y-auto my-3 pr-1 space-y-4">
+                <div>
+                    <h3 class="font-orbitron text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">3D BAT MODELS (POWER &amp; TIMING SWEET-SPOT)</h3>
+                    <div id="batShopGrid" class="grid grid-cols-2 gap-2.5"></div>
+                </div>
+                <div>
+                    <h3 class="font-orbitron text-xs font-bold text-sky-300 uppercase tracking-wider mb-2">3D STADIUM ATMOSPHERE &amp; SKY</h3>
+                    <div id="stadiumShopGrid" class="grid grid-cols-3 gap-2"></div>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800 flex justify-end">
+                <button id="btnCloseShop" class="pro-btn px-6 py-2 rounded-xl font-orbitron text-xs font-bold text-white">
+                    CLOSE SHOP
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 5. HAWK-EYE PITCH MAP & 360° WAGON WHEEL MODAL (#hawkeyeModal)            -->
+    <!-- ========================================================================= -->
+    <div id="hawkeyeModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="pro-panel rounded-3xl p-5 max-w-lg w-full border border-sky-400/50">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-800 mb-3">
+                <div>
+                    <span class="text-[10px] font-orbitron uppercase tracking-widest text-sky-400 block">NOVAFORGE TELEMETRY</span>
+                    <h2 class="font-orbitron text-lg sm:text-xl font-black text-white">📊 360° WAGON WHEEL &amp; SCORECARD</h2>
+                </div>
+                <button id="btnCloseHawkeye" class="pro-btn px-3 py-1 rounded-lg font-orbitron text-xs text-sky-200">✕</button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                <!-- 2D Wagon Wheel Radar Canvas -->
+                <div class="flex flex-col items-center bg-slate-950/90 p-3 rounded-2xl border border-slate-800">
+                    <canvas id="wagonWheelCanvas" width="180" height="180" class="rounded-full"></canvas>
+                    <div class="flex gap-3 mt-2 text-[10px] font-orbitron">
+                        <span class="text-amber-300">● 6s (GOLD)</span>
+                        <span class="text-emerald-300">● 4s (GREEN)</span>
+                        <span class="text-sky-300">● 1-2s (BLUE)</span>
+                    </div>
+                </div>
+
+                <!-- Match & Career Telemetry Summary -->
+                <div id="hawkeyeStatsBox" class="bg-slate-950/90 p-3.5 rounded-2xl border border-slate-800 text-xs space-y-2">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 6. INNINGS BREAK / MATCH RESULT MODAL (#resultModal)                      -->
+    <!-- ========================================================================= -->
+    <div id="resultModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="pro-panel rounded-3xl p-6 max-w-md w-full text-center border border-emerald-400/60">
+            <div id="resultIcon" class="text-4xl mb-2">🏆</div>
+            <h2 id="resultTitle" class="font-orbitron text-2xl font-black text-emerald-300 mb-1">INNINGS COMPLETE</h2>
+            <p id="resultSub" class="text-xs sm:text-sm text-slate-300 mb-5"></p>
+            <div class="flex flex-col sm:flex-row gap-2.5">
+                <button id="btnResultHome" class="pro-btn flex-1 py-3 rounded-xl font-orbitron text-xs font-bold text-sky-200">
+                    🏠 HOME LOBBY
+                </button>
+                <button id="btnResultContinue" class="pro-btn-emerald flex-1 py-3 rounded-xl font-orbitron text-xs font-bold text-white">
+                    ▶ CONTINUE
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*******************************************************************************
+         * NOVAFORGE STUDIOS // REAL CRICKET 3D: STADIUM PRO
+         * Complete Single-File Three.js r128 WebGL Cricket Engine + Broadcast Suite
+         *******************************************************************************/
+
+        const STORAGE_KEY = 'NOVAFORGE_REAL_CRICKET_3D_V1';
+
+        const FRANCHISE_TEAMS = [
+            { id: 'ind', name: 'INDIA BLUE', short: 'IND', primary: 0x0284c7, secondary: 0x38bdf8, css: '#0284c7' },
+            { id: 'mng', name: 'MANGALURU ROYALS', short: 'MNG', primary: 0x10b981, secondary: 0x34d399, css: '#10b981' },
+            { id: 'mum', name: 'MUMBAI TITANS', short: 'MUM', primary: 0x1d4ed8, secondary: 0xfbbf24, css: '#1d4ed8' },
+            { id: 'che', name: 'CHENNAI KINGS', short: 'CHE', primary: 0xeab308, secondary: 0x2563eb, css: '#eab308' }
+        ];
+
+        const BAT_CATALOG = [
+            { id: 'willow', name: 'English Willow Pro', cost: 0, power: 1.0, sweetSpot: 1.0, color: 0xd97706, emissive: 0x000000, desc: 'Traditional Test & T20 grade blade' },
+            { id: 'sovereign', name: 'Gold Sovereign', cost: 250, power: 1.12, sweetSpot: 1.15, color: 0xfbbf24, emissive: 0x451a03, desc: '+12% shot power & wider sweet-spot' },
+            { id: 'plasma', name: 'Cyber Plasma Blade', cost: 450, power: 1.24, sweetSpot: 1.25, color: 0x00f3ff, emissive: 0x083344, desc: '+24% monster Six elevation & velocity' },
+            { id: 'supernova', name: 'Nova Immortal', cost: 700, power: 1.35, sweetSpot: 1.32, color: 0xf43f5e, emissive: 0x4c0519, desc: 'Maximum 115m+ Stadium Roof power' }
+        ];
+
+        const STADIUM_THEMES = [
+            { id: 'night', name: 'Floodlight Night', cost: 0, sky: 0x040814, fog: 0x040814, ambient: 0.65, flood: 1.35 },
+            { id: 'sunset', name: 'Golden Twilight', cost: 220, sky: 0x1e1028, fog: 0x1e1028, ambient: 0.85, flood: 1.15 },
+            { id: 'day', name: 'Sunny Test Day', cost: 350, sky: 0x0c4a6e, fog: 0x0c4a6e, ambient: 1.15, flood: 0.7 }
+        ];
+
+        const defaultProfile = {
+            coins: 400,
+            wins: 0,
+            bestScore: 0,
+            totalSixes: 0,
+            longestSix: 0,
+            wickets: 0,
+            lastDaily: '',
+            teamId: 'ind',
+            format: 'BLITZ_2',
+            camMode: 'POV', // 'POV', 'TV', 'DRONE'
+            unlockedBats: ['willow'],
+            unlockedThemes: ['night'],
+            activeBat: 'willow',
+            activeTheme: 'night'
+        };
+
+        let profile = loadProfile();
+
+        function loadProfile() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return JSON.parse(JSON.stringify(defaultProfile));
+                return { ...JSON.parse(JSON.stringify(defaultProfile)), ...JSON.parse(raw) };
+            } catch (e) {
+                return JSON.parse(JSON.stringify(defaultProfile));
+            }
+        }
+
+        function saveProfile() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+            } catch (e) {}
+            updateEconomyUI();
+        }
+
+        // --- PROCEDURAL WEB AUDIO SYNTHESIZER ---
+        class StadiumAudioSynth {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            }
+            toggleMute() {
+                this.muted = !this.muted;
+                return this.muted;
+            }
+            playWillowCrack(power = 1.0) {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                // Crisp woody impulse + resonant thump
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(360 * power, now);
+                osc.frequency.exponentialRampToValueAtTime(68, now + 0.11);
+                gain.gain.setValueAtTime(0.32, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            }
+            playPitchBounce() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(175, now);
+                osc.frequency.exponentialRampToValueAtTime(65, now + 0.06);
+                gain.gain.setValueAtTime(0.14, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.065);
+            }
+            playZingStumps() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                [460, 310, 190, 120].forEach((f, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(f, now + idx * 0.035);
+                    osc.frequency.exponentialRampToValueAtTime(45, now + idx * 0.035 + 0.18);
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.035);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.035 + 0.19);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.035);
+                    osc.stop(now + idx * 0.035 + 0.19);
+                });
+            }
+            playStadiumRoarAndHorn() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                // Brass stadium chord
+                [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(f, now + idx * 0.055);
+                    gain.gain.setValueAtTime(0.11, now + idx * 0.055);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.055 + 0.34);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.055);
+                    osc.stop(now + idx * 0.055 + 0.34);
+                });
+
+                // Filtered white-noise crowd cheer swell
+                const dur = 1.1;
+                const bufSize = Math.floor(this.ctx.sampleRate * dur);
+                const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+                const data = buf.getChannelData(0);
+                for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buf;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.setValueAtTime(900, now);
+
+                const nGain = this.ctx.createGain();
+                nGain.gain.setValueAtTime(0.01, now);
+                nGain.gain.linearRampToValueAtTime(0.14, now + 0.25);
+                nGain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+                noise.connect(filter);
+                filter.connect(nGain);
+                nGain.connect(this.ctx.destination);
+                noise.start(now);
+                noise.stop(now + dur);
+            }
+        }
+
+        const audio = new StadiumAudioSynth();
+
+        // --- THREE.JS 3D STADIUM SCENE & ENTITIES ---
+        // 3D Coordinate Convention:
+        // Pitch center is (0, 0, 0).
+        // Striker's Stumps at z = -10, Bowler's Stumps at z = +10 (20-unit scaled pitch).
+        // Boundary Rope at radius = 68, Grandstands at radius = 74 to 92.
+        const BOUNDARY_RADIUS = 68;
+        let scene, camera, renderer, ambientLight, sunLight;
+        let stadiumGroup, batterGroup, batPivotGroup, batMesh, bowlerGroup, bowlerArmGroup;
+        let nearStumps = [], nearBails = [];
+        let fielders3D = [];
+        let ballMesh, ballShadowMesh, bounceRingMesh, aimArrowGroup, trailLine;
+        let trailPositions = [];
+
+        function initThreeStadium() {
+            const container = document.getElementById('webglContainer');
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x040814);
+            scene.fog = new THREE.FogExp2(0x040814, 0.0042);
+
+            camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 400);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            // Lights
+            ambientLight = new THREE.AmbientLight(0xdbeafe, 0.7);
+            scene.add(ambientLight);
+
+            sunLight = new THREE.DirectionalLight(0xffffff, 1.25);
+            sunLight.position.set(35, 65, -25);
+            scene.add(sunLight);
+
+            stadiumGroup = new THREE.Group();
+            scene.add(stadiumGroup);
+
+            // 1. Concentric Mowed Outfield Grass Rings
+            for (let r = 0; r < 7; r++) {
+                const innerR = r * 10;
+                const outerR = (r + 1) * 10 + 0.1;
+                const ringGeo = new THREE.RingGeometry(innerR, outerR, 64);
+                ringGeo.rotateX(-Math.PI / 2);
+                const ringMat = new THREE.MeshLambertMaterial({
+                    color: r % 2 === 0 ? 0x064e3b : 0x047857
+                });
+                const mesh = new THREE.Mesh(ringGeo, ringMat);
+                mesh.position.y = -0.02;
+                stadiumGroup.add(mesh);
+            }
+
+            // 2. 30-Yard Fielding Circle & Glowing Boundary Rope
+            const circle30Geo = new THREE.RingGeometry(31.5, 32.0, 64);
+            circle30Geo.rotateX(-Math.PI / 2);
+            const circle30Mesh = new THREE.Mesh(circle30Geo, new THREE.MeshBasicMaterial({ color: 0xe2e8f0 }));
+            circle30Mesh.position.y = 0.01;
+            stadiumGroup.add(circle30Mesh);
+
+            const ropeGeo = new THREE.TorusGeometry(BOUNDARY_RADIUS, 0.35, 12, 96);
+            ropeGeo.rotateX(Math.PI / 2);
+            const ropeMesh = new THREE.Mesh(ropeGeo, new THREE.MeshBasicMaterial({ color: 0x00f3ff }));
+            ropeMesh.position.y = 0.3;
+            stadiumGroup.add(ropeMesh);
+
+            // LED Advertising Perimeter Boards (Radius 71)
+            const adGeo = new THREE.CylinderGeometry(71, 71, 1.8, 64, 1, true);
+            const adMat = new THREE.MeshBasicMaterial({ color: 0x0284c7, side: THREE.DoubleSide, wireframe: false });
+            const adMesh = new THREE.Mesh(adGeo, adMat);
+            adMesh.position.y = 0.9;
+            stadiumGroup.add(adMesh);
+
+            // 3. Multi-Tier Grandstands & Crowd Points
+            const lowerTierGeo = new THREE.CylinderGeometry(86, 73, 12, 64, 1, true);
+            const lowerTierMat = new THREE.MeshLambertMaterial({ color: 0x0f172a, side: THREE.DoubleSide });
+            const lowerTier = new THREE.Mesh(lowerTierGeo, lowerTierMat);
+            lowerTier.position.y = 6;
+            stadiumGroup.add(lowerTier);
+
+            const upperTierGeo = new THREE.CylinderGeometry(98, 84, 15, 64, 1, true);
+            const upperTierMat = new THREE.MeshLambertMaterial({ color: 0x1e293b, side: THREE.DoubleSide });
+            const upperTier = new THREE.Mesh(upperTierGeo, upperTierMat);
+            upperTier.position.y = 19;
+            stadiumGroup.add(upperTier);
+
+            // Stadium Roof Canopy Ring
+            const roofGeo = new THREE.RingGeometry(78, 100, 64);
+            roofGeo.rotateX(Math.PI / 2);
+            const roofMesh = new THREE.Mesh(roofGeo, new THREE.MeshLambertMaterial({ color: 0x334155, side: THREE.DoubleSide }));
+            roofMesh.position.y = 26.5;
+            stadiumGroup.add(roofMesh);
+
+            // 2,200 Animated Crowd Fans in the Grandstands
+            const crowdGeo = new THREE.BufferGeometry();
+            const crowdCount = 2200;
+            const positions = new Float32Array(crowdCount * 3);
+            const colors = new Float32Array(crowdCount * 3);
+            const palette = [new THREE.Color(0x38bdf8), new THREE.Color(0xfbbf24), new THREE.Color(0xf43f5e), new THREE.Color(0x34d399), new THREE.Color(0xffffff)];
+
+            for (let i = 0; i < crowdCount; i++) {
+                const ang = Math.random() * Math.PI * 2;
+                const isUpper = Math.random() > 0.5;
+                const rad = isUpper ? (85 + Math.random() * 11) : (74 + Math.random() * 10);
+                const y = isUpper ? (13 + (rad - 85) * 1.1) : (1.5 + (rad - 74) * 0.9);
+                positions[i * 3] = Math.cos(ang) * rad;
+                positions[i * 3 + 1] = y;
+                positions[i * 3 + 2] = Math.sin(ang) * rad;
+
+                const c = palette[Math.floor(Math.random() * palette.length)];
+                colors[i * 3] = c.r;
+                colors[i * 3 + 1] = c.g;
+                colors[i * 3 + 2] = c.b;
+            }
+            crowdGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            crowdGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            const crowdMat = new THREE.PointsMaterial({ size: 0.95, vertexColors: true });
+            const crowdPoints = new THREE.Points(crowdGeo, crowdMat);
+            stadiumGroup.add(crowdPoints);
+
+            // 4. Four Towering Floodlight Pylons
+            for (let i = 0; i < 4; i++) {
+                const ang = (i / 4) * Math.PI * 2 + Math.PI / 4;
+                const px = Math.cos(ang) * 92;
+                const pz = Math.sin(ang) * 92;
+
+                const pole = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.9, 1.6, 48, 10),
+                    new THREE.MeshLambertMaterial({ color: 0x475569 })
+                );
+                pole.position.set(px, 24, pz);
+                stadiumGroup.add(pole);
+
+                const headPanel = new THREE.Mesh(
+                    new THREE.BoxGeometry(9, 4.5, 1.5),
+                    new THREE.MeshBasicMaterial({ color: 0xfef08a })
+                );
+                headPanel.position.set(px, 48, pz);
+                headPanel.lookAt(0, 0, 0);
+                stadiumGroup.add(headPanel);
+            }
+
+            // 5. Central 22-Yard Clay Pitch & White Crease Markings
+            const pitchMesh = new THREE.Mesh(
+                new THREE.PlaneGeometry(3.2, 22.5),
+                new THREE.MeshLambertMaterial({ color: 0xc2a378 })
+            );
+            pitchMesh.rotation.x = -Math.PI / 2;
+            pitchMesh.position.y = 0.01;
+            stadiumGroup.add(pitchMesh);
+
+            const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            [-8.8, 8.8].forEach(zCrease => {
+                const poppingLine = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 0.08), lineMat);
+                poppingLine.rotation.x = -Math.PI / 2;
+                poppingLine.position.set(0, 0.02, zCrease);
+                stadiumGroup.add(poppingLine);
+            });
+
+            // 6. Build 3D Stumps & LED Zing Bails at Both Ends (z = -10 and z = +10)
+            buildStumpSet(-10, true);
+            buildStumpSet(10, false);
+
+            // 7. Build 3D Batsman, Bowler, Wicketkeeper & 9 Fielders
+            batterGroup = create3DCricketer(0x0284c7, true);
+            batterGroup.position.set(-0.55, 0, -9.1);
+            scene.add(batterGroup);
+
+            bowlerGroup = create3DCricketer(0xf43f5e, false);
+            bowlerGroup.position.set(0.45, 0, 14.5);
+            bowlerGroup.rotation.y = Math.PI;
+            scene.add(bowlerGroup);
+
+            buildFielders3D();
+
+            // 8. 3D Cricket Ball, Shadow, Pitch Bounce Target Ring, Aim Arrow & Hawk-Eye Trail
+            ballMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.18, 16, 16),
+                new THREE.MeshPhongMaterial({ color: 0xffffff, emissive: 0xef4444, shininess: 90 })
+            );
+            ballMesh.position.set(0.4, 1.9, 10);
+            scene.add(ballMesh);
+
+            const shadowGeo = new THREE.CircleGeometry(0.24, 16);
+            shadowGeo.rotateX(-Math.PI / 2);
+            ballShadowMesh = new THREE.Mesh(shadowGeo, new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.45 }));
+            ballShadowMesh.position.y = 0.02;
+            scene.add(ballShadowMesh);
+
+            const ringGeo = new THREE.RingGeometry(0.32, 0.48, 32);
+            ringGeo.rotateX(-Math.PI / 2);
+            bounceRingMesh = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xfbbf24, side: THREE.DoubleSide }));
+            bounceRingMesh.position.set(0, 0.03, -4.5);
+            scene.add(bounceRingMesh);
+
+            // 3D Shot Direction Indicator Arrow on Outfield
+            aimArrowGroup = new THREE.Group();
+            const arrowStrip = new THREE.Mesh(
+                new THREE.PlaneGeometry(0.45, 16),
+                new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.38, side: THREE.DoubleSide })
+            );
+            arrowStrip.rotation.x = -Math.PI / 2;
+            arrowStrip.position.set(0, 0.03, 9);
+            aimArrowGroup.add(arrowStrip);
+            aimArrowGroup.position.set(0, 0, -9.0);
+            scene.add(aimArrowGroup);
+
+            // Hawk-Eye 3D Ball Flight Ribbon
+            const trailGeo = new THREE.BufferGeometry();
+            const maxPts = 120;
+            trailGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(maxPts * 3), 3));
+            trailLine = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({ color: 0x00f3ff, linewidth: 2 }));
+            scene.add(trailLine);
+
+            applyEquippedCosmetics3D();
+        }
+
+        function buildStumpSet(zPos, isStrikerEnd) {
+            const stumpMat = new THREE.MeshPhongMaterial({ color: 0xff0055, emissive: 0x4c0519 });
+            const bailMat = new THREE.MeshBasicMaterial({ color: 0x00f3ff });
+            const xOffsets = [-0.18, 0, 0.18];
+
+            xOffsets.forEach(xOff => {
+                const stump = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.85, 10), stumpMat);
+                stump.position.set(xOff, 0.425, zPos);
+                stump.userData = { baseX: xOff, baseY: 0.425, baseZ: zPos, vx: 0, vy: 0, vz: 0, rx: 0, rz: 0 };
+                scene.add(stump);
+                if (isStrikerEnd) nearStumps.push(stump);
+            });
+
+            [-0.09, 0.09].forEach(bx => {
+                const bail = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.17, 8), bailMat);
+                bail.rotation.z = Math.PI / 2;
+                bail.position.set(bx, 0.86, zPos);
+                bail.userData = { baseX: bx, baseY: 0.86, baseZ: zPos, vx: 0, vy: 0, vz: 0 };
+                scene.add(bail);
+                if (isStrikerEnd) nearBails.push(bail);
+            });
+        }
+
+        function create3DCricketer(kitHex, isBatsman) {
+            const group = new THREE.Group();
+            const kitMat = new THREE.MeshLambertMaterial({ color: kitHex });
+            const padMat = new THREE.MeshLambertMaterial({ color: 0xf8fafc });
+            const skinMat = new THREE.MeshLambertMaterial({ color: 0xd97706 });
+
+            // Legs / Pads
+            [-0.14, 0.14].forEach(lx => {
+                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.07, 0.75, 10), isBatsman ? padMat : kitMat);
+                leg.position.set(lx, 0.38, 0);
+                group.add(leg);
+            });
+
+            // Torso Jersey
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.68, 0.26), kitMat);
+            torso.position.set(0, 1.08, 0);
+            torso.name = 'jerseyTorso';
+            group.add(torso);
+
+            // Helmet & Head
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 14, 14), skinMat);
+            head.position.set(0, 1.62, 0);
+            group.add(head);
+
+            const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 14, 0, Math.PI * 2, 0, Math.PI * 0.65), kitMat);
+            helmet.position.set(0, 1.64, 0);
+            helmet.name = 'helmetMesh';
+            group.add(helmet);
+
+            if (isBatsman) {
+                batPivotGroup = new THREE.Group();
+                batPivotGroup.position.set(0.28, 1.15, 0.15);
+
+                batMesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.11, 0.92, 0.045),
+                    new THREE.MeshPhongMaterial({ color: 0xd97706 })
+                );
+                batMesh.position.set(0, -0.38, 0.1);
+                batMesh.rotation.x = 0.25;
+                batPivotGroup.add(batMesh);
+                group.add(batPivotGroup);
+            } else {
+                const armPivot = new THREE.Group();
+                armPivot.position.set(-0.28, 1.35, 0);
+                const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.05, 0.62, 8), kitMat);
+                arm.position.set(0, -0.26, 0);
+                armPivot.add(arm);
+                group.add(armPivot);
+                bowlerArmGroup = armPivot;
+            }
+
+            return group;
+        }
+
+        function buildFielders3D() {
+            const coords = [
+                [0, -13.8],     // Wicketkeeper
+                [-14, -2],      // Point
+                [-16, 12],      // Extra Cover
+                [-7, 25],       // Mid-Off
+                [7, 25],        // Mid-On
+                [16, 11],       // Mid-Wicket
+                [13, -3],       // Square Leg
+                [-38, 42],      // Deep Cover Sweeper
+                [40, 40],       // Deep Mid-Wicket
+                [18, -42]       // Fine Leg Boundary
+            ];
+
+            coords.forEach(([fx, fz]) => {
+                const fGroup = create3DCricketer(0xe11d48, false);
+                fGroup.position.set(fx, 0, fz);
+                fGroup.lookAt(0, 0, -9);
+                fGroup.userData = { homeX: fx, homeZ: fz };
+                scene.add(fGroup);
+                fielders3D.push(fGroup);
+            });
+        }
+
+        function applyEquippedCosmetics3D() {
+            const team = FRANCHISE_TEAMS.find(t => t.id === profile.teamId) || FRANCHISE_TEAMS[0];
+            const batSpec = BAT_CATALOG.find(b => b.id === profile.activeBat) || BAT_CATALOG[0];
+            const stTheme = STADIUM_THEMES.find(s => s.id === profile.activeTheme) || STADIUM_THEMES[0];
+
+            if (batterGroup) {
+                batterGroup.traverse(obj => {
+                    if (obj.name === 'jerseyTorso' || obj.name === 'helmetMesh') {
+                        obj.material.color.setHex(team.primary);
+                    }
+                });
+            }
+            if (batMesh) {
+                batMesh.material.color.setHex(batSpec.color);
+                batMesh.material.emissive.setHex(batSpec.emissive);
+            }
+            if (scene) {
+                scene.background.setHex(stTheme.sky);
+                scene.fog.color.setHex(stTheme.fog);
+                ambientLight.intensity = stTheme.ambient;
+                sunLight.intensity = stTheme.flood;
+            }
+        }
+
+        // --- MATCH & 3D BALL AERODYNAMICS STATE ---
+        let isLobbyOpen = true;
+        let hasActiveMatch = false;
+        let lobbyFlyoverAngle = 0;
+
+        let match = {
+            innings: 1, // 1 = Player Batting, 2 = Player Bowling
+            maxBalls: 12,
+            maxWickets: 5,
+            pRuns: 0,
+            pWickets: 0,
+            pBalls: 0,
+            aiRuns: 0,
+            aiWickets: 0,
+            aiBalls: 0,
+            target: null,
+            overPills: [],
+            shotHistory: [], // { angle, distRatio, runs } for 360 Wagon Wheel
+            aimAngle: 0,     // radians (-0.95 to +0.95)
+            bowlType: 'INSWING',
+            bowlMeter: 0.1,
+            bowlMeterDir: 1
+        };
+
+        // Delivery & Physics State
+        // state: 'IDLE', 'RUNUP', 'BOWLED', 'HIT_FLIGHT', 'DEAD'
+        let sim = {
+            state: 'IDLE',
+            timer: 0,
+            speedKph: 145.2,
+            lastSixMeters: 0,
+            startX: 0.35,
+            bounceX: 0,
+            bounceZ: -5.2,
+            swingDrift: 0,
+            spinTurn: 0,
+            bounced: false,
+            swung: false,
+            batAnimTimer: 0,
+            progress: 0,
+            flightDur: 0.74,
+            bx: 0.35,
+            by: 2.0,
+            bz: 10.0,
+            vx: 0,
+            vy: 0,
+            vz: 0,
+            isLofted: false,
+            stumpsShattered: false,
+            camShake: 0
+        };
+
+        function startNew3DMatch() {
+            const fmt = profile.format;
+            const maxBalls = fmt === 'CLASH_5' ? 30 : (fmt === 'SUPER_1' ? 6 : 12);
+
+            match = {
+                innings: 1,
+                maxBalls,
+                maxWickets: fmt === 'SUPER_1' ? 2 : 5,
+                pRuns: 0,
+                pWickets: 0,
+                pBalls: 0,
+                aiRuns: 0,
+                aiWickets: 0,
+                aiBalls: 0,
+                target: null,
+                overPills: [],
+                shotHistory: [],
+                aimAngle: 0,
+                bowlType: 'INSWING',
+                bowlMeter: 0.1,
+                bowlMeterDir: 1
+            };
+
+            hasActiveMatch = true;
+            applyEquippedCosmetics3D();
+            prepareNextBall();
+            updateScorebugUI();
+        }
+
+        function prepareNextBall() {
+            sim.state = 'IDLE';
+            sim.bounced = false;
+            sim.swung = false;
+            sim.stumpsShattered = false;
+            sim.batAnimTimer = 0;
+            sim.bx = 0.35;
+            sim.by = 2.05;
+            sim.bz = 10.0;
+            ballMesh.position.set(sim.bx, sim.by, sim.bz);
+            clearTrailLine();
+
+            // Reset Stumps & Bails to upright position
+            nearStumps.forEach(s => {
+                s.position.set(s.userData.baseX, s.userData.baseY, s.userData.baseZ);
+                s.rotation.set(0, 0, 0);
+            });
+            nearBails.forEach(b => {
+                b.position.set(b.userData.baseX, b.userData.baseY, b.userData.baseZ);
+                b.rotation.set(0, 0, Math.PI / 2);
+            });
+
+            // Reset 3D Fielders to home coordinates
+            fielders3D.forEach(f => {
+                f.position.set(f.userData.homeX, 0, f.userData.homeZ);
+                f.lookAt(0, 0, -9);
+            });
+
+            bowlerGroup.position.set(0.45, 0, 15.0);
+            if (batPivotGroup) batPivotGroup.rotation.set(0, 0, 0);
+
+            const isBatting = match.innings === 1;
+            document.getElementById('battingDock').classList.toggle('hidden', !isBatting);
+            document.getElementById('battingDock').classList.toggle('flex', isBatting);
+            document.getElementById('bowlingDock').classList.toggle('hidden', isBatting);
+            document.getElementById('bowlingDock').classList.toggle('flex', !isBatting);
+            aimArrowGroup.visible = isBatting;
+
+            if (isBatting) {
+                setTelemetry('BOWLER PREPARING RUN-UP... WATCH THE PITCH RING!');
+                setTimeout(() => {
+                    if (!isLobbyOpen && sim.state === 'IDLE' && match.innings === 1) {
+                        launchAIDelivery();
+                    }
+                }, 850);
+            } else {
+                bounceRingMesh.visible = true;
+                setTelemetry('YOUR BOWLING: TAP PITCH OR PRESS [SPACE] ON THE GREEN METER!');
+            }
+        }
+
+        function launchAIDelivery() {
+            if (sim.state !== 'IDLE') return;
+            const repertoire = [
+                { name: 'FAST OUTSWINGER', kph: 147.4, dur: 0.72, bZ: -5.2, swing: -0.42, turn: -0.15 },
+                { name: 'DEADLY TOE-YORKER', kph: 144.8, dur: 0.70, bZ: -8.3, swing: 0.18, turn: 0.05 },
+                { name: 'SHORT BOUNCER', kph: 141.6, dur: 0.75, bZ: -1.8, swing: 0.05, turn: 0.0 },
+                { name: 'SHARP LEG-BREAK SPIN', kph: 93.8, dur: 0.94, bZ: -5.8, swing: -0.1, turn: 0.72 },
+                { name: 'MYSTERY DOOSRA', kph: 96.2, dur: 0.92, bZ: -5.5, swing: 0.1, turn: -0.68 }
+            ];
+            const d = repertoire[Math.floor(Math.random() * repertoire.length)];
+            sim.speedKph = +(d.kph + (Math.random() * 2.4 - 1.2)).toFixed(1);
+            sim.flightDur = d.dur;
+            sim.startX = 0.38;
+            sim.bounceX = (Math.random() - 0.5) * 0.65;
+            sim.bounceZ = d.bZ;
+            sim.swingDrift = d.swing;
+            sim.spinTurn = d.turn;
+            sim.state = 'RUNUP';
+            sim.timer = 0.48;
+
+            bounceRingMesh.position.set(sim.bounceX, 0.03, sim.bounceZ);
+            bounceRingMesh.visible = true;
+
+            document.getElementById('hudSpeedGun').textContent = `${sim.speedKph} KPH`;
+            setTelemetry(`⚾ ${d.name} // ${sim.speedKph} KPH`);
+        }
+
+        // --- PLAYER 3D SHOT EXECUTION ---
+        function executePlayerShot(shotType) {
+            if (isLobbyOpen || match.innings !== 1) return;
+            audio.init();
+
+            if (sim.state === 'IDLE') {
+                launchAIDelivery();
+                return;
+            }
+            if (sim.state !== 'BOWLED' || sim.swung) return;
+
+            sim.swung = true;
+            sim.batAnimTimer = 0.38;
+
+            const batSpec = BAT_CATALOG.find(b => b.id === profile.activeBat) || BAT_CATALOG[0];
+            // Ideal contact point is when ball reaches z around -8.6 (progress ~ 0.91)
+            const timingDelta = sim.progress - 0.91;
+            const absDelta = Math.abs(timingDelta);
+            const windowMult = batSpec.sweetSpot;
+
+            if (absDelta <= 0.095 * windowMult) {
+                // SWEET SPOT CONTACT!
+                launchHitBall3D(shotType, 1.22 * batSpec.power, '⚡ SWEET-SPOT TIMING!');
+            } else if (absDelta <= 0.185 * windowMult) {
+                // GOOD / MISTIMED CONTACT
+                const tag = timingDelta < 0 ? 'EARLY SHOT!' : 'LATE SHOT!';
+                launchHitBall3D(shotType, 0.85 * batSpec.power, tag);
+            } else {
+                showCenterCallout(timingDelta < 0 ? 'SWUNG TOO EARLY!' : 'TOO LATE!', '#f43f5e');
+            }
+        }
+
+        function launchHitBall3D(shotType, qualityMult, timingBanner) {
+            sim.state = 'HIT_FLIGHT';
+            bounceRingMesh.visible = false;
+            audio.playWillowCrack(qualityMult);
+            sim.camShake = shotType === 'LOFT' && qualityMult > 1.05 ? 0.45 : 0.18;
+
+            let speedXZ = 28;
+            let velY = 3.2;
+            sim.isLofted = false;
+
+            if (shotType === 'DEFEND') {
+                speedXZ = 19 * qualityMult;
+                velY = 1.8;
+            } else if (shotType === 'DRIVE') {
+                speedXZ = 36 * qualityMult;
+                velY = 3.4;
+            } else if (shotType === 'LOFT') {
+                speedXZ = 39 * qualityMult;
+                velY = 17.5 * qualityMult;
+                sim.isLofted = true;
+            }
+
+            const jitter = (Math.random() - 0.5) * 0.14;
+            const theta = match.aimAngle + jitter;
+            sim.vx = Math.sin(theta) * speedXZ;
+            sim.vz = Math.cos(theta) * speedXZ;
+            sim.vy = velY;
+
+            setTelemetry(`${timingBanner} BALL TRACKER ACTIVE...`);
+        }
+
+        // --- PLAYER BOWLING RELEASE ---
+        function executePlayerBowl() {
+            if (isLobbyOpen || match.innings !== 2 || sim.state !== 'IDLE') return;
+            audio.init();
+
+            const error = Math.abs(match.bowlMeter - 0.5);
+            const isGreenZone = error <= 0.09;
+
+            const specs = {
+                INSWING: { kph: 147.2, dur: 0.70, bZ: -5.4, turn: -0.35 },
+                YORKER: { kph: 144.5, dur: 0.68, bZ: -8.4, turn: 0.08 },
+                BOUNCER: { kph: 141.0, dur: 0.74, bZ: -1.9, turn: 0.0 },
+                LEGSPIN: { kph: 94.4, dur: 0.92, bZ: -5.6, turn: 0.68 }
+            };
+            const sp = specs[match.bowlType] || specs.INSWING;
+
+            sim.speedKph = sp.kph;
+            sim.flightDur = sp.dur;
+            sim.startX = 0.38;
+            sim.bounceX = bounceRingMesh.position.x;
+            sim.bounceZ = bounceRingMesh.position.z;
+            sim.spinTurn = sp.turn;
+            sim.isPerfectBowl = isGreenZone;
+            sim.state = 'RUNUP';
+            sim.timer = 0.42;
+
+            document.getElementById('hudSpeedGun').textContent = `${sim.speedKph} KPH`;
+            setTelemetry(isGreenZone ? '🔥 PINPOINT GREEN-ZONE RELEASE!' : '⚾ DELIVERY RELEASED!');
+        }
+
+        // --- MAIN 3D PHYSICS & ANIMATION STEP ---
+        function update3DPhysics(dt) {
+            if (isLobbyOpen) {
+                // Orbit camera around stadium in Home Screen Lobby
+                lobbyFlyoverAngle += dt * 0.18;
+                camera.position.set(
+                    Math.sin(lobbyFlyoverAngle) * 62,
+                    26 + Math.sin(lobbyFlyoverAngle * 2) * 4,
+                    Math.cos(lobbyFlyoverAngle) * 62
+                );
+                camera.lookAt(0, 2, 0);
+                return;
+            }
+
+            if (sim.camShake > 0) sim.camShake = Math.max(0, sim.camShake - dt * 1.6);
+
+            // Swing bat animation
+            if (sim.batAnimTimer > 0 && batPivotGroup) {
+                sim.batAnimTimer = Math.max(0, sim.batAnimTimer - dt);
+                const swingPhase = 1 - (sim.batAnimTimer / 0.38);
+                batPivotGroup.rotation.x = -Math.sin(swingPhase * Math.PI) * 1.65;
+                batPivotGroup.rotation.z = Math.sin(swingPhase * Math.PI) * 0.45 * (-match.aimAngle);
+            }
+
+            // Oscillate Bowling Release Meter in Innings 2
+            if (match.innings === 2 && sim.state === 'IDLE') {
+                match.bowlMeter += match.bowlMeterDir * dt * 1.15;
+                if (match.bowlMeter >= 1) { match.bowlMeter = 1; match.bowlMeterDir = -1; }
+                if (match.bowlMeter <= 0) { match.bowlMeter = 0; match.bowlMeterDir = 1; }
+                const cur = document.getElementById('bowlReleaseCursor');
+                if (cur) cur.style.left = `${match.bowlMeter * 96}%`;
+            }
+
+            // 1. Bowler Run-Up Animation
+            if (sim.state === 'RUNUP') {
+                sim.timer -= dt;
+                bowlerGroup.position.z = 10.0 + Math.max(0, sim.timer * 10.5);
+                if (bowlerArmGroup) bowlerArmGroup.rotation.x = sim.timer * 8.0;
+                if (sim.timer <= 0) {
+                    sim.state = 'BOWLED';
+                    sim.progress = 0;
+                    clearTrailLine();
+                }
+            }
+
+            // 2. Ball Bowled From z = +10 to z = -10
+            if (sim.state === 'BOWLED') {
+                sim.progress += dt / sim.flightDur;
+                const p = sim.progress;
+
+                sim.bz = 10.0 - p * 20.0;
+                const bounceProg = (10.0 - sim.bounceZ) / 20.0;
+
+                if (p < bounceProg) {
+                    const bp = p / bounceProg;
+                    sim.bx = sim.startX * (1 - bp) + sim.bounceX * bp + Math.sin(bp * Math.PI) * sim.swingDrift;
+                    sim.by = 2.05 * (1 - bp * bp);
+                } else {
+                    if (!sim.bounced) {
+                        sim.bounced = true;
+                        audio.playPitchBounce();
+                    }
+                    const ap = (p - bounceProg) / (1 - bounceProg);
+                    sim.bx = sim.bounceX + ap * sim.spinTurn;
+                    const peakH = sim.bounceZ > -3.0 ? 1.55 : (sim.bounceZ < -7.5 ? 0.35 : 0.92);
+                    sim.by = Math.sin(ap * Math.PI * 0.82) * peakH;
+                }
+
+                ballMesh.position.set(sim.bx, Math.max(0.18, sim.by), sim.bz);
+                ballShadowMesh.position.set(sim.bx, 0.02, sim.bz);
+                pushTrailPoint(sim.bx, Math.max(0.18, sim.by), sim.bz);
+
+                // AI Batsman swing logic when Player is Bowling (Innings 2)
+                if (match.innings === 2 && p >= 0.89 && !sim.swung) {
+                    sim.swung = true;
+                    sim.batAnimTimer = 0.38;
+                    if (sim.isPerfectBowl && Math.random() < 0.58) {
+                        // AI beaten by pinpoint delivery!
+                    } else {
+                        match.aimAngle = (Math.random() - 0.5) * 1.6;
+                        const aiShot = Math.random() < 0.38 ? 'LOFT' : 'DRIVE';
+                        const aiQuality = sim.isPerfectBowl ? 0.76 : (0.95 + Math.random() * 0.28);
+                        launchHitBall3D(aiShot, aiQuality, 'AI SHOT PLAYED!');
+                        return;
+                    }
+                }
+
+                // Ball reaches Striker's Stumps (z <= -10)
+                if (p >= 1.0) {
+                    if (Math.abs(sim.bx) <= 0.32 && sim.by <= 0.92) {
+                        triggerStumpShatter3D();
+                        settleDelivery(0, true, '💥 BOWLED HIM! ZING BAILS FLYING!');
+                    } else {
+                        settleDelivery(0, false, 'DOT BALL! PAST THE OUTSIDE EDGE');
+                    }
+                }
+            }
+
+            // 3. Ball Hit Into the 3D Outfield / Grandstands
+            if (sim.state === 'HIT_FLIGHT') {
+                sim.bx += sim.vx * dt;
+                sim.by += sim.vy * dt;
+                sim.bz += sim.vz * dt;
+                sim.vy -= 19.6 * dt; // Gravity
+
+                // Outfield Grass Bounce & Friction
+                if (sim.by <= 0.18 && sim.vy < 0) {
+                    sim.by = 0.18;
+                    sim.vy = -sim.vy * 0.42;
+                    sim.vx *= 0.84;
+                    sim.vz *= 0.84;
+                    if (Math.abs(sim.vy) > 1.2) audio.playPitchBounce();
+                }
+
+                ballMesh.position.set(sim.bx, sim.by, sim.bz);
+                ballShadowMesh.position.set(sim.bx, 0.02, sim.bz);
+                pushTrailPoint(sim.bx, sim.by, sim.bz);
+
+                // 9 Fielders Chase & Intercept Ball in 3D
+                for (let i = 1; i < fielders3D.length; i++) {
+                    const f = fielders3D[i];
+                    const dx = sim.bx - f.position.x;
+                    const dz = sim.bz - f.position.z;
+                    const dist = Math.hypot(dx, dz);
+
+                    if (dist < 28) {
+                        const chaseSpd = 10.5 * dt;
+                        f.position.x += (dx / (dist || 1)) * Math.min(dist, chaseSpd);
+                        f.position.z += (dz / (dist || 1)) * Math.min(dist, chaseSpd);
+                        f.lookAt(sim.bx, 0, sim.bz);
+                    }
+
+                    // Fielder Interception / Catch Check
+                    if (dist < 1.65 && sim.by < 2.6) {
+                        if (sim.isLofted && sim.by > 0.45) {
+                            settleDelivery(0, true, '🧤 CAUGHT IN THE OUTFIELD!');
+                            return;
+                        } else {
+                            const distFromCenter = Math.hypot(sim.bx, sim.bz);
+                            const runs = distFromCenter > 38 ? 2 : (distFromCenter > 16 ? 1 : 0);
+                            settleDelivery(runs, false, runs === 2 ? '⚡ QUICK TWO RUNS!' : (runs === 1 ? 'SMART SINGLE (1 RUN)' : 'FIELDED! NO RUN'));
+                            return;
+                        }
+                    }
+                }
+
+                // Check Boundary Rope Crossing (Radius >= BOUNDARY_RADIUS)
+                const radialDist = Math.hypot(sim.bx, sim.bz);
+                if (radialDist >= BOUNDARY_RADIUS) {
+                    const isSix = sim.isLofted && sim.by > 1.2;
+                    if (isSix) {
+                        const meters = Math.min(119, Math.round(78 + Math.hypot(sim.vx, sim.vz) * 0.85 + sim.by * 1.1));
+                        sim.lastSixMeters = meters;
+                        document.getElementById('hudSixDistance').textContent = `${meters}M`;
+                        audio.playStadiumRoarAndHorn();
+                        settleDelivery(6, false, `🚀 ${meters}m MONSTER SIX!`);
+                    } else {
+                        audio.playStadiumRoarAndHorn();
+                        settleDelivery(4, false, '🏏 CRACKING 4 RUNS TO THE ROPE!');
+                    }
+                    return;
+                }
+
+                // Ball slows to a stop inside outfield
+                if (Math.hypot(sim.vx, sim.vz) < 2.2 && sim.by <= 0.25) {
+                    const runs = radialDist > 34 ? 2 : (radialDist > 14 ? 1 : 0);
+                    settleDelivery(runs, false, runs > 0 ? `+${runs} RUNS TAKEN!` : 'DOT BALL');
+                    return;
+                }
+            }
+
+            // Animate shattered stumps & LED zing bails flying in 3D
+            if (sim.stumpsShattered) {
+                nearStumps.forEach(s => {
+                    s.position.x += s.userData.vx * dt;
+                    s.position.y = Math.max(0.1, s.position.y + s.userData.vy * dt);
+                    s.position.z += s.userData.vz * dt;
+                    s.userData.vy -= 15 * dt;
+                    s.rotation.x += s.userData.rx * dt;
+                    s.rotation.z += s.userData.rz * dt;
+                });
+                nearBails.forEach(b => {
+                    b.position.x += b.userData.vx * dt;
+                    b.position.y = Math.max(0.08, b.position.y + b.userData.vy * dt);
+                    b.position.z += b.userData.vz * dt;
+                    b.userData.vy -= 14 * dt;
+                    b.rotation.x += 12 * dt;
+                });
+            }
+
+            updateBroadcastCamera3D(dt);
+        }
+
+        function triggerStumpShatter3D() {
+            sim.stumpsShattered = true;
+            audio.playZingStumps();
+            sim.camShake = 0.55;
+
+            nearStumps.forEach(s => {
+                s.userData.vx = (Math.random() - 0.5) * 4;
+                s.userData.vy = 3.5 + Math.random() * 2.5;
+                s.userData.vz = -5 - Math.random() * 3;
+                s.userData.rx = -8 - Math.random() * 6;
+                s.userData.rz = (Math.random() - 0.5) * 8;
+            });
+            nearBails.forEach(b => {
+                b.userData.vx = (Math.random() - 0.5) * 6;
+                b.userData.vy = 5.5 + Math.random() * 3;
+                b.userData.vz = -6 - Math.random() * 4;
+            });
+        }
+
+        function updateBroadcastCamera3D(dt) {
+            const shakeX = (Math.random() - 0.5) * sim.camShake;
+            const shakeY = (Math.random() - 0.5) * sim.camShake;
+
+            if (sim.state === 'HIT_FLIGHT' || (sim.state === 'DEAD' && sim.stumpsShattered)) {
+                if (sim.stumpsShattered) {
+                    // Close-up Wicket Shatter Cam
+                    camera.position.lerp(new THREE.Vector3(2.2 + shakeX, 1.8 + shakeY, -6.5), dt * 6);
+                    camera.lookAt(0, 0.6, -10);
+                } else {
+                    // Dynamic Broadcast Follow Cam tracking the ball across the 3D stadium
+                    const camTarget = new THREE.Vector3(
+                        sim.bx * 0.42,
+                        Math.max(4.5, sim.by * 0.65 + 4.5),
+                        -16 + sim.bz * 0.32
+                    );
+                    camera.position.lerp(camTarget, dt * 4.5);
+                    camera.lookAt(sim.bx, Math.max(0.8, sim.by * 0.6), sim.bz);
+                }
+                return;
+            }
+
+            // Standard Pre-Delivery / Delivery Camera Modes
+            if (profile.camMode === 'POV') {
+                camera.position.set(shakeX, 3.05 + shakeY, -14.8);
+                camera.lookAt(0, 1.0, 6.0);
+            } else if (profile.camMode === 'TV') {
+                camera.position.set(1.2 + shakeX, 7.2 + shakeY, -21.5);
+                camera.lookAt(0, 0.8, 2.0);
+            } else {
+                // Drone Aerial View
+                camera.position.set(-18 + shakeX, 24 + shakeY, -24);
+                camera.lookAt(0, 0, 0);
+            }
+        }
+
+        function pushTrailPoint(x, y, z) {
+            trailPositions.push(x, y, z);
+            if (trailPositions.length > 120 * 3) {
+                trailPositions.splice(0, 3);
+            }
+            const attr = trailLine.geometry.attributes.position;
+            for (let i = 0; i < 120 * 3; i++) {
+                attr.array[i] = i < trailPositions.length ? trailPositions[i] : trailPositions[trailPositions.length - 3 + (i % 3)] || 0;
+            }
+            attr.needsUpdate = true;
+            trailLine.geometry.setDrawRange(0, Math.floor(trailPositions.length / 3));
+        }
+
+        function clearTrailLine() {
+            trailPositions = [];
+            trailLine.geometry.setDrawRange(0, 0);
+        }
+
+        // --- SCORING & INNINGS RESOLUTION ---
+        function settleDelivery(runs, isOut, calloutText) {
+            sim.state = 'DEAD';
+            setTelemetry(calloutText);
+            showCenterCallout(
+                isOut ? 'OUT!' : (runs === 6 ? `SIX! ${sim.lastSixMeters}M` : (runs === 4 ? 'FOUR!' : `${runs} RUN${runs === 1 ? '' : 'S'}`)),
+                isOut ? '#f43f5e' : (runs === 6 ? '#fbbf24' : (runs === 4 ? '#10b981' : '#38bdf8'))
+            );
+
+            const pill = isOut ? 'W' : String(runs);
+            match.overPills.push(pill);
+            if (match.overPills.length > 6) match.overPills = [pill];
+
+            if (match.innings === 1) {
+                match.pBalls++;
+                if (isOut) {
+                    match.pWickets++;
+                } else {
+                    match.pRuns += runs;
+                    if (runs > 0) {
+                        match.shotHistory.push({
+                            angle: match.aimAngle,
+                            distRatio: runs >= 6 ? 0.95 : (runs === 4 ? 0.82 : 0.48),
+                            runs
+                        });
+                    }
+                    if (runs === 6) {
+                        profile.totalSixes++;
+                        if (sim.lastSixMeters > profile.longestSix) profile.longestSix = sim.lastSixMeters;
+                        profile.coins += 30;
+                    } else if (runs === 4) {
+                        profile.coins += 15;
+                    }
+                    if (match.pRuns > profile.bestScore) profile.bestScore = match.pRuns;
+                    saveProfile();
+                }
+            } else {
+                match.aiBalls++;
+                if (isOut) {
+                    match.aiWickets++;
+                    profile.wickets++;
+                    profile.coins += 35;
+                    saveProfile();
+                } else {
+                    match.aiRuns += runs;
+                }
+            }
+
+            updateScorebugUI();
+
+            setTimeout(() => {
+                evaluateMatchProgression();
+            }, 1550);
+        }
+
+        function evaluateMatchProgression() {
+            if (match.innings === 1) {
+                if (match.pBalls >= match.maxBalls || match.pWickets >= match.maxWickets) {
+                    match.target = match.pRuns + 1;
+                    match.innings = 2;
+                    match.overPills = [];
+                    openResultModal(
+                        '⚾',
+                        'INNINGS BREAK',
+                        `You posted ${match.pRuns}/${match.pWickets}. Defend ${match.target} runs in ${match.maxBalls} balls (or Quick-Sim)!`,
+                        'BOWL 2ND INNINGS ▶',
+                        () => {
+                            closeResultModal();
+                            updateScorebugUI();
+                            prepareNextBall();
+                        }
+                    );
+                    return;
+                }
+                prepareNextBall();
+            } else {
+                if (match.aiRuns >= match.target) {
+                    concludeMatch(false, `OPPONENT CHASED ${match.target} RUNS!`);
+                    return;
+                }
+                if (match.aiBalls >= match.maxBalls || match.aiWickets >= match.maxWickets) {
+                    const won = match.aiRuns < match.pRuns;
+                    concludeMatch(won, won ? `YOU WON BY ${match.pRuns - match.aiRuns} RUNS!` : 'SUPER OVER THRILLER TIE!');
+                    return;
+                }
+                prepareNextBall();
+            }
+        }
+
+        function concludeMatch(playerWon, msg) {
+            hasActiveMatch = false;
+            if (playerWon) {
+                profile.wins++;
+                profile.coins += 200;
+                audio.playStadiumRoarAndHorn();
+            }
+            saveProfile();
+
+            openResultModal(
+                playerWon ? '🏆' : '🏟️',
+                playerWon ? 'STADIUM VICTORY!' : 'MATCH FINISHED',
+                `${msg} ${playerWon ? '(+200 🪙 Pro-Coins Awarded)' : ''}`,
+                '▶ PLAY REMATCH',
+                () => {
+                    closeResultModal();
+                    startNew3DMatch();
+                }
+            );
+        }
+
+        // --- UI, SCOREBUG, HAWK-EYE WAGON WHEEL & SHOP ---
+        function formatOversText(balls) {
+            return `${Math.floor(balls / 6)}.${balls % 6}`;
+        }
+
+        function updateScorebugUI() {
+            const team = FRANCHISE_TEAMS.find(t => t.id === profile.teamId) || FRANCHISE_TEAMS[0];
+            const badge = document.getElementById('hudTeamBadge');
+            badge.style.backgroundColor = team.css;
+            badge.textContent = team.short;
+            document.getElementById('hudTeamName').textContent = team.name;
+
+            const isBat = match.innings === 1;
+            const r = isBat ? match.pRuns : match.aiRuns;
+            const w = isBat ? match.pWickets : match.aiWickets;
+            const b = isBat ? match.pBalls : match.aiBalls;
+
+            document.getElementById('hudRolePill').textContent = isBat ? 'BATTING' : 'BOWLING';
+            document.getElementById('hudScoreMain').textContent = `${r}/${w}`;
+            document.getElementById('hudOversMain').textContent = `(${formatOversText(b)} / ${formatOversText(match.maxBalls)})`;
+
+            const crr = b > 0 ? ((r / b) * 6).toFixed(2) : '0.00';
+            document.getElementById('hudCrrText').textContent = `CRR: ${crr}`;
+
+            const targetEl = document.getElementById('hudTargetInfo');
+            if (match.target !== null) {
+                const need = Math.max(0, match.target - r);
+                const rem = Math.max(0, match.maxBalls - b);
+                targetEl.textContent = `TARGET ${match.target} // NEED ${need} OFF ${rem} BALLS`;
+            } else {
+                targetEl.textContent = `1ST INNINGS // 360° STADIUM PRO`;
+            }
+
+            const pillsBox = document.getElementById('hudOverPills');
+            pillsBox.innerHTML = '';
+            match.overPills.forEach(p => {
+                const s = document.createElement('span');
+                const isW = p === 'W';
+                const isB = Number(p) >= 4;
+                s.className = `px-1.5 py-0.2 rounded font-orbitron text-[9px] font-bold ${
+                    isW ? 'bg-rose-600 text-white' : (isB ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-200')
+                }`;
+                s.textContent = p;
+                pillsBox.appendChild(s);
+            });
+        }
+
+        function updateEconomyUI() {
+            document.getElementById('lobbyCoins').textContent = profile.coins.toLocaleString();
+            document.getElementById('hudCoins').textContent = profile.coins.toLocaleString();
+            document.getElementById('shopCoins').textContent = profile.coins.toLocaleString();
+            document.getElementById('lobbyWins').textContent = profile.wins;
+            document.getElementById('lobbyBest').textContent = profile.bestScore;
+            document.getElementById('lobbySixes').textContent = profile.totalSixes;
+            document.getElementById('lobbyMaxDist').textContent = profile.longestSix;
+
+            const today = new Date().toISOString().slice(0, 10);
+            const claimed = profile.lastDaily === today;
+            const dBtn = document.getElementById('btnDailyBonus');
+            if (dBtn) {
+                dBtn.disabled = claimed;
+                dBtn.style.opacity = claimed ? '0.5' : '1';
+                document.getElementById('dailyBonusSub').textContent = claimed ? 'CLAIMED' : 'DAILY BONUS';
+            }
+
+            document.getElementById('hudCamText').textContent = profile.camMode;
+            document.getElementById('ribbonCamLabel').textContent = `${profile.camMode} CAM`;
+        }
+
+        function showCenterCallout(text, color) {
+            const box = document.getElementById('centerCalloutContainer');
+            box.innerHTML = `<div class="broadcast-banner-anim pro-panel px-6 py-2 rounded-2xl border-2 font-orbitron text-xl sm:text-3xl font-black tracking-wider shadow-2xl" style="color:${color}; border-color:${color}">${text}</div>`;
+        }
+
+        function setTelemetry(text) {
+            document.getElementById('telemetryBanner').textContent = text;
+        }
+
+        function renderLobbyTeams() {
+            const grid = document.getElementById('lobbyTeamGrid');
+            grid.innerHTML = '';
+            FRANCHISE_TEAMS.forEach(t => {
+                const active = profile.teamId === t.id;
+                const btn = document.createElement('button');
+                btn.className = `p-2 rounded-xl border text-left transition-all ${
+                    active ? 'border-2 border-sky-400 bg-sky-950/45' : 'border-slate-700 bg-slate-900/60'
+                }`;
+                btn.innerHTML = `
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-full" style="background:${t.css}"></span>
+                        <span class="font-orbitron text-[10px] font-black text-white">${t.short}</span>
+                    </div>
+                    <div class="text-[9px] text-slate-300 truncate mt-0.5">${t.name}</div>
+                `;
+                btn.addEventListener('click', () => {
+                    audio.init();
+                    audio.playPitchBounce();
+                    profile.teamId = t.id;
+                    saveProfile();
+                    applyEquippedCosmetics3D();
+                    renderLobbyTeams();
+                });
+                grid.appendChild(btn);
+            });
+        }
+
+        function renderHawkeyeModal() {
+            setRibbonOpen(false);
+            const wCanvas = document.getElementById('wagonWheelCanvas');
+            const wCtx = wCanvas.getContext('2d');
+            const r = wCanvas.width / 2;
+
+            wCtx.clearRect(0, 0, wCanvas.width, wCanvas.height);
+            wCtx.fillStyle = '#064e3b';
+            wCtx.beginPath();
+            wCtx.arc(r, r, r - 4, 0, Math.PI * 2);
+            wCtx.fill();
+            wCtx.strokeStyle = '#00f3ff';
+            wCtx.lineWidth = 2;
+            wCtx.stroke();
+
+            // 30-yard inner circle
+            wCtx.strokeStyle = 'rgba(255,255,255,0.35)';
+            wCtx.setLineDash([4, 3]);
+            wCtx.beginPath();
+            wCtx.arc(r, r, r * 0.48, 0, Math.PI * 2);
+            wCtx.stroke();
+            wCtx.setLineDash([]);
+
+            // Pitch rectangle
+            wCtx.fillStyle = '#c2a378';
+            wCtx.fillRect(r - 4, r - 14, 8, 28);
+
+            // Draw recorded Wagon Wheel shot lines
+            match.shotHistory.forEach(sh => {
+                const len = (r - 8) * sh.distRatio;
+                const ex = r + Math.sin(sh.angle) * len;
+                const ey = r - Math.cos(sh.angle) * len;
+                wCtx.strokeStyle = sh.runs >= 6 ? '#fbbf24' : (sh.runs === 4 ? '#34d399' : '#38bdf8');
+                wCtx.lineWidth = sh.runs >= 4 ? 2.5 : 1.5;
+                wCtx.beginPath();
+                wCtx.moveTo(r, r + 8);
+                wCtx.lineTo(ex, ey);
+                wCtx.stroke();
+            });
+
+            document.getElementById('hawkeyeStatsBox').innerHTML = `
+                <div class="flex justify-between text-sky-300"><span>YOUR INNINGS:</span> <b>${match.pRuns}/${match.pWickets} (${formatOversText(match.pBalls)})</b></div>
+                <div class="flex justify-between text-amber-300"><span>OPPONENT:</span> <b>${match.aiRuns}/${match.aiWickets} (${formatOversText(match.aiBalls)})</b></div>
+                <div class="flex justify-between text-emerald-300"><span>LONGEST SIX:</span> <b>${profile.longestSix} METERS</b></div>
+                <div class="flex justify-between text-fuchsia-300"><span>CAREER SIXES:</span> <b>${profile.totalSixes} SIXES</b></div>
+                <div class="flex justify-between text-slate-300"><span>CAREER WINS:</span> <b>${profile.wins} MATCHES</b></div>
+            `;
+
+            document.getElementById('hawkeyeModal').classList.remove('hidden');
+            document.getElementById('hawkeyeModal').classList.add('flex');
+        }
+
+        function renderProShopModal() {
+            setRibbonOpen(false);
+            updateEconomyUI();
+            const batGrid = document.getElementById('batShopGrid');
+            const stGrid = document.getElementById('stadiumShopGrid');
+            batGrid.innerHTML = '';
+            stGrid.innerHTML = '';
+
+            BAT_CATALOG.forEach(b => {
+                const unlocked = profile.unlockedBats.includes(b.id);
+                const active = profile.activeBat === b.id;
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900/90 p-2.5 rounded-xl border border-slate-700 flex flex-col justify-between';
+                card.innerHTML = `
+                    <div>
+                        <div class="font-orbitron text-xs font-bold text-white">${b.name}</div>
+                        <div class="text-[10px] text-slate-400 mb-2">${b.desc}</div>
+                    </div>
+                    <button class="w-full py-1.5 rounded-lg font-orbitron text-[10px] font-bold ${active ? 'bg-emerald-600/40 text-emerald-300 border border-emerald-400' : 'pro-btn text-white'}">
+                        ${active ? '✓ EQUIPPED' : (unlocked ? 'EQUIP BAT' : `UNLOCK 🪙 ${b.cost}`)}
+                    </button>
+                `;
+                card.querySelector('button').addEventListener('click', () => {
+                    if (unlocked) {
+                        profile.activeBat = b.id;
+                        saveProfile();
+                        applyEquippedCosmetics3D();
+                        renderProShopModal();
+                    } else if (profile.coins >= b.cost) {
+                        profile.coins -= b.cost;
+                        profile.unlockedBats.push(b.id);
+                        profile.activeBat = b.id;
+                        audio.playStadiumRoarAndHorn();
+                        saveProfile();
+                        applyEquippedCosmetics3D();
+                        renderProShopModal();
+                    }
+                });
+                batGrid.appendChild(card);
+            });
+
+            STADIUM_THEMES.forEach(st => {
+                const unlocked = profile.unlockedThemes.includes(st.id);
+                const active = profile.activeTheme === st.id;
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900/90 p-2.5 rounded-xl border border-slate-700 flex flex-col justify-between';
+                card.innerHTML = `
+                    <div class="font-orbitron text-[11px] font-bold text-white mb-2">${st.name}</div>
+                    <button class="w-full py-1.5 rounded-lg font-orbitron text-[10px] font-bold ${active ? 'bg-emerald-600/40 text-emerald-300 border border-emerald-400' : 'pro-btn text-white'}">
+                        ${active ? '✓ ACTIVE' : (unlocked ? 'SELECT' : `🪙 ${st.cost}`)}
+                    </button>
+                `;
+                card.querySelector('button').addEventListener('click', () => {
+                    if (unlocked) {
+                        profile.activeTheme = st.id;
+                        saveProfile();
+                        applyEquippedCosmetics3D();
+                        renderProShopModal();
+                    } else if (profile.coins >= st.cost) {
+                        profile.coins -= st.cost;
+                        profile.unlockedThemes.push(st.id);
+                        profile.activeTheme = st.id;
+                        audio.playStadiumRoarAndHorn();
+                        saveProfile();
+                        applyEquippedCosmetics3D();
+                        renderProShopModal();
+                    }
+                });
+                stGrid.appendChild(card);
+            });
+
+            document.getElementById('shopModal').classList.remove('hidden');
+            document.getElementById('shopModal').classList.add('flex');
+        }
+
+        function openHomeLobby() {
+            isLobbyOpen = true;
+            setRibbonOpen(false);
+            document.getElementById('homeLobby').classList.remove('hidden');
+            document.getElementById('homeLobby').classList.add('flex');
+            const resBtn = document.getElementById('btnResumeLobby');
+            resBtn.classList.toggle('hidden', !hasActiveMatch);
+            resBtn.classList.toggle('flex', hasActiveMatch);
+            updateEconomyUI();
+            renderLobbyTeams();
+        }
+
+        function closeLobbyAndPlay(fresh = false) {
+            audio.init();
+            isLobbyOpen = false;
+            document.getElementById('homeLobby').classList.add('hidden');
+            document.getElementById('homeLobby').classList.remove('flex');
+            if (fresh || !hasActiveMatch) {
+                startNew3DMatch();
+            } else {
+                prepareNextBall();
+            }
+        }
+
+        function openResultModal(icon, title, sub, btnText, callback) {
+            document.getElementById('resultIcon').textContent = icon;
+            document.getElementById('resultTitle').textContent = title;
+            document.getElementById('resultSub').textContent = sub;
+            const btn = document.getElementById('btnResultContinue');
+            btn.textContent = btnText;
+            btn.onclick = callback;
+            document.getElementById('resultModal').classList.remove('hidden');
+            document.getElementById('resultModal').classList.add('flex');
+        }
+
+        function closeResultModal() {
+            document.getElementById('resultModal').classList.add('hidden');
+            document.getElementById('resultModal').classList.remove('flex');
+        }
+
+        function cycleCameraMode() {
+            const modes = ['POV', 'TV', 'DRONE'];
+            profile.camMode = modes[(modes.indexOf(profile.camMode) + 1) % modes.length];
+            saveProfile();
+        }
+
+        // --- UPPER-LEFT DRAG-TO-PULL RIBBON DRAWER PHYSICS ---
+        const leftRibbonDrawer = document.getElementById('leftRibbonDrawer');
+        const ribbonTray = document.getElementById('ribbonTray');
+        const ribbonPullTab = document.getElementById('ribbonPullTab');
+        const ribbonTabText = document.getElementById('ribbonTabText');
+        const ribbonBackdrop = document.getElementById('ribbonBackdrop');
+
+        let ribbonOpen = false;
+        let isDraggingRibbon = false;
+        let dragMoved = false;
+        let dragStartX = 0;
+        let dragStartTranslate = 0;
+        let currentDragTranslate = 0;
+
+        function getClosedOffset() {
+            return -(ribbonTray ? ribbonTray.offsetWidth : 315);
+        }
+
+        function setRibbonOpen(state) {
+            ribbonOpen = Boolean(state);
+            leftRibbonDrawer.classList.remove('dragging');
+            leftRibbonDrawer.style.transform = '';
+            leftRibbonDrawer.classList.toggle('open', ribbonOpen);
+            ribbonBackdrop.classList.toggle('active', ribbonOpen);
+            ribbonTabText.textContent = ribbonOpen ? 'HIDE' : 'PULL';
+        }
+
+        ribbonPullTab.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            audio.init();
+            isDraggingRibbon = true;
+            dragMoved = false;
+            dragStartX = e.clientX;
+            const closedOffset = getClosedOffset();
+            dragStartTranslate = ribbonOpen ? 0 : closedOffset;
+            currentDragTranslate = dragStartTranslate;
+            leftRibbonDrawer.classList.add('dragging');
+            if (ribbonPullTab.setPointerCapture) {
+                try { ribbonPullTab.setPointerCapture(e.pointerId); } catch (err) {}
+            }
+        });
+
+        ribbonPullTab.addEventListener('pointermove', (e) => {
+            if (!isDraggingRibbon) return;
+            const dx = e.clientX - dragStartX;
+            if (Math.abs(dx) > 5) dragMoved = true;
+            const closedOffset = getClosedOffset();
+            currentDragTranslate = Math.max(closedOffset, Math.min(0, dragStartTranslate + dx));
+            leftRibbonDrawer.style.transform = `translateX(${currentDragTranslate}px)`;
+        });
+
+        function finishRibbonDrag() {
+            if (!isDraggingRibbon) return;
+            isDraggingRibbon = false;
+            if (!dragMoved) {
+                audio.playPitchBounce();
+                setRibbonOpen(!ribbonOpen);
+                return;
+            }
+            const closedOffset = getClosedOffset();
+            const threshold = ribbonOpen ? closedOffset * 0.28 : closedOffset * 0.68;
+            setRibbonOpen(currentDragTranslate > threshold);
+        }
+        ribbonPullTab.addEventListener('pointerup', finishRibbonDrag);
+        ribbonPullTab.addEventListener('pointercancel', finishRibbonDrag);
+        ribbonBackdrop.addEventListener('pointerdown', () => setRibbonOpen(false));
+
+        // --- UI & KEYBOARD / TOUCH EVENT LISTENERS ---
+        function setShotAimAngle(angleRad) {
+            match.aimAngle = Math.max(-1.1, Math.min(1.1, angleRad));
+            if (aimArrowGroup) aimArrowGroup.rotation.y = -match.aimAngle;
+            document.querySelectorAll('.shot-dir-btn').forEach(b => {
+                const matchBtn = Math.abs(Number(b.getAttribute('data-angle')) - match.aimAngle) < 0.15;
+                b.classList.toggle('ring-2', matchBtn);
+                b.classList.toggle('ring-emerald-400', matchBtn);
+            });
+        }
+
+        document.querySelectorAll('.shot-dir-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                setShotAimAngle(Number(btn.getAttribute('data-angle')));
+            });
+        });
+
+        document.getElementById('btnShotDefend').addEventListener('click', () => executePlayerShot('DEFEND'));
+        document.getElementById('btnShotDrive').addEventListener('click', () => executePlayerShot('DRIVE'));
+        document.getElementById('btnShotLoft').addEventListener('click', () => executePlayerShot('LOFT'));
+        document.getElementById('btnBowlAction').addEventListener('click', executePlayerBowl);
+
+        document.querySelectorAll('.delivery-type-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                match.bowlType = btn.getAttribute('data-delivery');
+                document.querySelectorAll('.delivery-type-btn').forEach(b => {
+                    const active = b.getAttribute('data-delivery') === match.bowlType;
+                    b.classList.toggle('ring-2', active);
+                    b.classList.toggle('ring-amber-400', active);
+                });
+            });
+        });
+
+        document.getElementById('btnQuickSimBowling').addEventListener('click', () => {
+            if (match.innings !== 2) return;
+            const rem = match.maxBalls - match.aiBalls;
+            for (let i = 0; i < rem; i++) {
+                if (Math.random() < 0.24) match.aiWickets++;
+                else match.aiRuns += [0, 1, 1, 2, 4, 6][Math.floor(Math.random() * 6)];
+                match.aiBalls++;
+                if (match.aiWickets >= match.maxWickets || match.aiRuns >= match.target) break;
+            }
+            updateScorebugUI();
+            evaluateMatchProgression();
+        });
+
+        // Tap / Drag on 3D Viewport to Aim Pitch Bounce Ring when Bowling or Aim Shot when Batting
+        document.getElementById('webglContainer').addEventListener('pointerdown', (e) => {
+            if (isLobbyOpen) return;
+            audio.init();
+            const nx = (e.clientX / window.innerWidth) - 0.5;
+            if (match.innings === 2 && sim.state === 'IDLE') {
+                bounceRingMesh.position.x = Math.max(-0.9, Math.min(0.9, nx * 2.2));
+                bounceRingMesh.position.z = Math.max(-8.5, Math.min(-1.5, -9 + (1 - e.clientY / window.innerHeight) * 9));
+            } else if (match.innings === 1) {
+                setShotAimAngle(nx * 2.1);
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (isLobbyOpen) return;
+            if (e.code === 'KeyA' || e.code === 'ArrowLeft') setShotAimAngle(match.aimAngle - 0.48);
+            if (e.code === 'KeyD' || e.code === 'ArrowRight') setShotAimAngle(match.aimAngle + 0.48);
+            if (e.code === 'Digit1') executePlayerShot('DEFEND');
+            if (e.code === 'Digit2' || e.code === 'Space') {
+                e.preventDefault();
+                if (match.innings === 1) executePlayerShot('DRIVE');
+                else executePlayerBowl();
+            }
+            if (e.code === 'Digit3' || e.code === 'KeyW' || e.code === 'ArrowUp') executePlayerShot('LOFT');
+            if (e.code === 'KeyC') cycleCameraMode();
+        });
+
+        // Lobby Format & Cam Selectors
+        document.querySelectorAll('.format-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                audio.init();
+                audio.playPitchBounce();
+                profile.format = btn.getAttribute('data-format');
+                saveProfile();
+                document.querySelectorAll('.format-btn').forEach(b => {
+                    const active = b.getAttribute('data-format') === profile.format;
+                    b.className = active
+                        ? 'format-btn p-2 rounded-xl border-2 border-sky-400 bg-sky-950/40 text-left'
+                        : 'format-btn p-2 rounded-xl border border-slate-700 bg-slate-900/60 text-left';
+                });
+            });
+        });
+
+        document.querySelectorAll('.cam-select-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                audio.init();
+                audio.playPitchBounce();
+                profile.camMode = btn.getAttribute('data-cam');
+                saveProfile();
+                document.querySelectorAll('.cam-select-btn').forEach(b => {
+                    const active = b.getAttribute('data-cam') === profile.camMode;
+                    b.className = active
+                        ? 'cam-select-btn p-2 rounded-xl border-2 border-emerald-400 bg-emerald-950/40 text-left'
+                        : 'cam-select-btn p-2 rounded-xl border border-slate-700 bg-slate-900/60 text-left';
+                });
+            });
+        });
+
+        // Navigation & Modal Buttons
+        document.getElementById('btnLaunchMatch').addEventListener('click', () => closeLobbyAndPlay(true));
+        document.getElementById('btnResumeLobby').addEventListener('click', () => closeLobbyAndPlay(false));
+        document.getElementById('btnRibbonHome').addEventListener('click', openHomeLobby);
+        document.getElementById('btnResultHome').addEventListener('click', () => {
+            closeResultModal();
+            openHomeLobby();
+        });
+
+        document.getElementById('btnDailyBonus').addEventListener('click', () => {
+            audio.init();
+            const today = new Date().toISOString().slice(0, 10);
+            if (profile.lastDaily === today) return;
+            profile.lastDaily = today;
+            profile.coins += 200;
+            audio.playStadiumRoarAndHorn();
+            saveProfile();
+        });
+
+        document.getElementById('btnHudCamSwitch').addEventListener('click', cycleCameraMode);
+        document.getElementById('btnRibbonCam').addEventListener('click', cycleCameraMode);
+
+        document.getElementById('btnLobbyShop').addEventListener('click', renderProShopModal);
+        document.getElementById('btnRibbonShop').addEventListener('click', renderProShopModal);
+        document.getElementById('btnHudCoins').addEventListener('click', renderProShopModal);
+        document.getElementById('btnCloseShop').addEventListener('click', () => {
+            document.getElementById('shopModal').classList.add('hidden');
+            document.getElementById('shopModal').classList.remove('flex');
+        });
+
+        document.getElementById('btnLobbyHawkeye').addEventListener('click', renderHawkeyeModal);
+        document.getElementById('btnRibbonHawkeye').addEventListener('click', renderHawkeyeModal);
+        document.getElementById('btnCloseHawkeye').addEventListener('click', () => {
+            document.getElementById('hawkeyeModal').classList.add('hidden');
+            document.getElementById('hawkeyeModal').classList.remove('flex');
+        });
+
+        document.getElementById('btnRibbonAudio').addEventListener('click', () => {
+            audio.init();
+            const muted = audio.toggleMute();
+            document.getElementById('ribbonAudioIcon').textContent = muted ? '🔇' : '🔊';
+            document.getElementById('ribbonAudioLabel').textContent = muted ? 'MUTED' : 'AUDIO';
+        });
+
+        document.getElementById('btnRibbonRestart').addEventListener('click', () => {
+            setRibbonOpen(false);
+            closeLobbyAndPlay(true);
+        });
+
+        window.addEventListener('resize', () => {
+            if (!camera || !renderer) return;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- MAIN WEBGL ANIMATION LOOP ---
+        let lastFrameTime = performance.now();
+        function animate3DLoop(now) {
+            const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+            lastFrameTime = now;
+
+            update3DPhysics(dt);
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+            requestAnimationFrame(animate3DLoop);
+        }
+
+        window.onload = function () {
+            initThreeStadium();
+            openHomeLobby();
+            requestAnimationFrame(animate3DLoop);
+        };
+    </script>
+</body>
+</html>

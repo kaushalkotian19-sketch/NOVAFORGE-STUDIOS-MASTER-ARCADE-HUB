@@ -1,0 +1,2130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CYBER TURF: NEON BOX CRICKET | NovaForge Studios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #030712;
+            font-family: 'Rajdhani', sans-serif;
+            color: #e2e8f0;
+            touch-action: none;
+        }
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .cyber-panel {
+            background: rgba(8, 13, 26, 0.9);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 14px rgba(0, 243, 255, 0.06);
+        }
+        .cyber-btn {
+            background: linear-gradient(135deg, rgba(0, 243, 255, 0.16) 0%, rgba(0, 110, 255, 0.28) 100%);
+            border: 1px solid rgba(0, 243, 255, 0.55);
+            box-shadow: 0 0 12px rgba(0, 243, 255, 0.18);
+            transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .cyber-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(0, 243, 255, 0.32) 0%, rgba(0, 140, 255, 0.45) 100%);
+            box-shadow: 0 0 18px rgba(0, 243, 255, 0.45);
+            transform: translateY(-1px);
+        }
+        .cyber-btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+        .cyber-btn-gold {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.4) 100%);
+            border: 1px solid rgba(251, 191, 36, 0.8);
+            box-shadow: 0 0 14px rgba(245, 158, 11, 0.28);
+            transition: all 0.16s ease;
+        }
+        .cyber-btn-gold:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.42) 0%, rgba(217, 119, 6, 0.58) 100%);
+            box-shadow: 0 0 22px rgba(251, 191, 36, 0.55);
+            transform: translateY(-1px);
+        }
+        .cyber-btn-emerald {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.4) 100%);
+            border: 1px solid rgba(52, 211, 153, 0.8);
+            box-shadow: 0 0 14px rgba(16, 185, 129, 0.28);
+            transition: all 0.16s ease;
+        }
+        .cyber-btn-emerald:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.42) 0%, rgba(5, 150, 105, 0.58) 100%);
+            box-shadow: 0 0 22px rgba(52, 211, 153, 0.55);
+            transform: translateY(-1px);
+        }
+        .cyber-btn-magenta {
+            background: linear-gradient(135deg, rgba(244, 63, 94, 0.25) 0%, rgba(190, 18, 60, 0.4) 100%);
+            border: 1px solid rgba(251, 113, 133, 0.8);
+            box-shadow: 0 0 14px rgba(244, 63, 94, 0.28);
+            transition: all 0.16s ease;
+        }
+        .scanlines {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0, 0, 0, 0.18) 50%,
+                rgba(0, 0, 0, 0.18)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        /* LEFT-TOP SWIPEABLE & DRAG-TO-PULL CYBER RIBBON DRAWER */
+        #ribbonBackdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 18, 0.54);
+            backdrop-filter: blur(2px);
+            z-index: 75;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        #ribbonBackdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #leftRibbonDrawer {
+            position: fixed;
+            top: 8px;
+            left: 0;
+            z-index: 80;
+            display: flex;
+            align-items: stretch;
+            max-width: calc(100vw - 10px);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translateX(calc(-100% + 40px));
+            filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.9));
+            will-change: transform;
+        }
+        #leftRibbonDrawer.dragging {
+            transition: none !important;
+        }
+        #leftRibbonDrawer.open {
+            transform: translateX(0);
+        }
+        .ribbon-tray {
+            background: rgba(8, 13, 26, 0.97);
+            backdrop-filter: blur(18px);
+            border-top: 1px solid rgba(0, 243, 255, 0.5);
+            border-bottom: 1px solid rgba(0, 243, 255, 0.5);
+            padding: 8px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            width: min(324px, calc(100vw - 54px));
+            box-shadow: inset 0 0 18px rgba(0, 243, 255, 0.08);
+        }
+        .ribbon-tray button {
+            width: 100%;
+            justify-content: center;
+            padding: 7px 6px;
+        }
+        .ribbon-pull-tab {
+            width: 40px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.32) 0%, rgba(15, 23, 42, 0.98) 100%);
+            border: 1px solid rgba(52, 211, 153, 0.8);
+            border-left: 1px solid rgba(52, 211, 153, 0.25);
+            border-radius: 0 14px 14px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            cursor: grab;
+            padding: 8px 2px;
+            box-shadow: 4px 0 18px rgba(16, 185, 129, 0.3);
+            transition: background 0.2s ease, box-shadow 0.2s ease;
+            touch-action: none;
+        }
+        .ribbon-pull-tab:active {
+            cursor: grabbing;
+        }
+        .ribbon-grip-bars {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 1px;
+        }
+        .ribbon-grip-bars span {
+            width: 2px;
+            height: 10px;
+            border-radius: 1px;
+            background: rgba(52, 211, 153, 0.8);
+        }
+        .ribbon-chevron {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #leftRibbonDrawer.open .ribbon-chevron {
+            transform: rotate(180deg);
+        }
+
+        @keyframes pulseFloodlight {
+            0%, 100% { opacity: 0.75; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.06); }
+        }
+        .floodlight-glow {
+            animation: pulseFloodlight 3.5s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="select-none">
+
+    <!-- 3D Perspective Box Cricket Turf Canvas -->
+    <canvas id="turfCanvas"></canvas>
+
+    <!-- Subtle Scanline Overlay -->
+    <div class="fixed inset-0 scanlines z-20 opacity-20"></div>
+
+    <!-- Backdrop Dimmer for Upper-Left Pull Ribbon -->
+    <div id="ribbonBackdrop" aria-hidden="true"></div>
+
+    <!-- ========================================================================= -->
+    <!-- 1. UPPER-LEFT DRAG-TO-PULL 2x3 COMPACT CYBER RIBBON DRAWER                -->
+    <!-- ========================================================================= -->
+    <div id="leftRibbonDrawer" aria-label="Quick Action Pull Ribbon">
+        <div class="ribbon-tray" id="ribbonTray">
+            <!-- 1. HOME -->
+            <button id="btnRibbonHome" class="cyber-btn-emerald rounded-xl text-[10px] sm:text-xs font-orbitron text-white font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🏠</span> <span>HOME</span>
+            </button>
+            <!-- 2. SHOP -->
+            <button id="btnRibbonShop" class="cyber-btn-gold rounded-xl text-[10px] sm:text-xs font-orbitron text-white font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🎨</span> <span>SHOP</span>
+            </button>
+            <!-- 3. SOUND -->
+            <button id="btnRibbonAudio" class="cyber-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-cyan-300 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span id="ribbonAudioIcon">🔊</span> <span id="ribbonAudioLabel">SOUND</span>
+            </button>
+            <!-- 4. RESTART -->
+            <button id="btnRibbonRestart" class="cyber-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-rose-300 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🔄</span> <span>RESTART</span>
+            </button>
+            <!-- 5. TURF THEME -->
+            <button id="btnRibbonTheme" class="cyber-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-fuchsia-300 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🌌</span> <span id="ribbonThemeShort">MIDNIGHT</span>
+            </button>
+            <!-- 6. SCORECARD -->
+            <button id="btnRibbonScorecard" class="cyber-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-amber-300 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>📊</span> <span>SCORECARD</span>
+            </button>
+        </div>
+
+        <!-- Always-Accessible Drag-to-Pull Handle -->
+        <button id="ribbonPullTab" class="ribbon-pull-tab" title="Drag/Pull Out or Tap to Toggle Menu">
+            <div class="ribbon-grip-bars"><span></span><span></span></div>
+            <span class="ribbon-chevron text-emerald-300 text-xs font-black leading-none">❯</span>
+            <span id="ribbonTabText" class="font-orbitron text-[8px] font-bold tracking-widest text-emerald-200 uppercase leading-none" style="writing-mode: vertical-rl; text-orientation: mixed;">PULL</span>
+        </button>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 2. HOME SCREEN LOBBY (#homeLobby) - Opens First on Launch                 -->
+    <!-- ========================================================================= -->
+    <div id="homeLobby" class="fixed inset-0 z-40 flex items-center justify-center p-2.5 sm:p-4 bg-[#030712]/90 backdrop-blur-xl overflow-y-auto">
+        <div class="cyber-panel rounded-3xl p-4 sm:p-6 max-w-xl w-full border border-emerald-400/45 shadow-[0_0_55px_rgba(16,185,129,0.18)] my-auto flex flex-col gap-3.5">
+
+            <!-- Studio Header + Neon Stadium Floodlight Emblem -->
+            <div class="flex items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                <div class="min-w-0">
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/90 border border-emerald-500/40 text-emerald-300 text-[9px] sm:text-[10px] font-orbitron tracking-widest uppercase mb-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                        NOVAFORGE STUDIOS
+                    </div>
+                    <h1 class="font-orbitron text-2xl sm:text-3xl font-black tracking-tight text-white leading-none">
+                        CYBER TURF
+                    </h1>
+                    <div class="font-orbitron text-xs sm:text-sm font-bold tracking-[0.2em] text-emerald-400 mt-0.5">
+                        NEON BOX CRICKET
+                    </div>
+                </div>
+
+                <!-- Stadium Floodlight SVG Crest -->
+                <div class="w-14 h-14 rounded-2xl bg-slate-950 border border-emerald-400/50 flex flex-col items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.35)] floodlight-glow shrink-0">
+                    <span class="text-2xl leading-none">🏏</span>
+                    <span class="font-orbitron text-[8px] font-bold text-amber-300 tracking-wider mt-0.5">2X SURGE</span>
+                </div>
+            </div>
+
+            <!-- Live Turf-Coins, Career Stats & Claimable Daily Bonus -->
+            <div class="grid grid-cols-4 gap-1.5 bg-slate-950/85 p-2.5 rounded-2xl border border-slate-800 items-center text-center">
+                <div>
+                    <div class="text-[9px] text-slate-400 uppercase font-orbitron">TURF COINS</div>
+                    <div class="font-orbitron text-xs sm:text-sm font-black text-amber-400">🪙 <span id="lobbyCoins">300</span></div>
+                </div>
+                <div class="border-x border-slate-800">
+                    <div class="text-[9px] text-slate-400 uppercase font-orbitron">WINS / BEST</div>
+                    <div class="font-orbitron text-xs sm:text-sm font-black text-emerald-300">🏆<span id="lobbyWins">0</span> ⭐<span id="lobbyBest">0</span></div>
+                </div>
+                <div class="border-r border-slate-800">
+                    <div class="text-[9px] text-slate-400 uppercase font-orbitron">6s / WICKETS</div>
+                    <div class="font-orbitron text-xs sm:text-sm font-black text-cyan-300">⚡<span id="lobbySixes">0</span> 🎯<span id="lobbyWickets">0</span></div>
+                </div>
+                <div class="pl-1">
+                    <button id="btnDailyBonus" class="cyber-btn-gold w-full py-1.5 px-1 rounded-xl font-orbitron text-[9px] sm:text-[10px] font-bold text-white leading-tight">
+                        🎁 +150 🪙<br><span id="dailyBonusSub" class="text-[8px] text-amber-200">DAILY BONUS</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Match Format Selector -->
+            <div>
+                <div class="text-[10px] font-orbitron font-bold uppercase tracking-wider text-emerald-300 mb-1.5">
+                    1. SELECT TURF FORMAT
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button data-format="BLITZ_2" class="format-card text-left p-2 rounded-xl border-2 border-emerald-400 bg-emerald-950/35 transition-all">
+                        <div class="font-orbitron text-[10px] sm:text-xs font-black text-white">⚡ 2-OVER BLITZ</div>
+                        <div class="text-[10px] text-slate-300 leading-tight mt-0.5">12 balls high-voltage shootout.</div>
+                    </button>
+                    <button data-format="CLASH_5" class="format-card text-left p-2 rounded-xl border border-slate-700 bg-slate-900/60 transition-all">
+                        <div class="font-orbitron text-[10px] sm:text-xs font-black text-amber-300">🔥 5-OVER CLASH</div>
+                        <div class="text-[10px] text-slate-300 leading-tight mt-0.5">30 balls tactical box battle.</div>
+                    </button>
+                    <button data-format="CHASE" class="format-card text-left p-2 rounded-xl border border-slate-700 bg-slate-900/60 transition-all">
+                        <div class="font-orbitron text-[10px] sm:text-xs font-black text-cyan-300">👑 CHASE TARGET</div>
+                        <div class="text-[10px] text-slate-300 leading-tight mt-0.5">Gun down a 48-run target in 12 balls!</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Team Franchise Selector -->
+            <div>
+                <div class="text-[10px] font-orbitron font-bold uppercase tracking-wider text-emerald-300 mb-1.5">
+                    2. CHOOSE YOUR FRANCHISE SQUAD
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="teamSelectorGrid">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- Launch, Resume & Gear Shop Actions -->
+            <div class="flex flex-col gap-2 pt-1">
+                <button id="btnResumeLobby" class="hidden cyber-btn w-full py-2.5 rounded-2xl font-orbitron text-xs sm:text-sm font-black text-cyan-200 items-center justify-center gap-2">
+                    <span>▶</span> <span>RESUME ACTIVE TURF MATCH</span>
+                </button>
+                <button id="btnEnterArena" class="cyber-btn-emerald w-full py-3.5 rounded-2xl font-orbitron text-sm sm:text-base font-black text-white flex items-center justify-center gap-2 shadow-lg">
+                    <span>🚀</span> <span>ENTER TURF ARENA</span>
+                </button>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btnLobbyShop" class="cyber-btn-gold py-2.5 rounded-xl font-orbitron text-xs font-bold text-white flex items-center justify-center gap-1.5">
+                        <span>🎨</span> <span>GEAR &amp; TURF SHOP</span>
+                    </button>
+                    <button id="btnLobbyScorecard" class="cyber-btn py-2.5 rounded-xl font-orbitron text-xs font-bold text-cyan-200 flex items-center justify-center gap-1.5">
+                        <span>📊</span> <span>RULES &amp; SURGE INFO</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 3. IN-GAME HUD LAYER (Broadcast Scorebar + Batting & Bowling Controls)    -->
+    <!-- ========================================================================= -->
+    <div id="gameHud" class="fixed inset-0 z-10 pointer-events-none flex flex-col justify-between p-2 sm:p-3">
+        <!-- Top Broadcast Scoreboard Bar -->
+        <div class="w-full max-w-4xl mx-auto pl-11 pr-1 flex flex-wrap items-center justify-between gap-2 pointer-events-auto">
+            <!-- Left: Score, Wickets, Overs & Target -->
+            <div class="cyber-panel rounded-2xl px-3 py-1.5 flex items-center gap-3 border border-emerald-400/40">
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <span id="hudTeamDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                        <span id="hudTeamName" class="font-orbitron text-[10px] sm:text-xs font-bold text-emerald-300">STRIKERS</span>
+                        <span id="hudInningsBadge" class="px-1.5 py-0.2 rounded bg-cyan-500/20 border border-cyan-400/40 font-orbitron text-[9px] text-cyan-200">BATTING</span>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span id="hudScoreText" class="font-orbitron text-lg sm:text-2xl font-black text-white">0/0</span>
+                        <span id="hudOversText" class="font-orbitron text-xs text-slate-400">(0.0 / 2.0)</span>
+                    </div>
+                </div>
+
+                <div class="h-8 w-px bg-slate-800"></div>
+
+                <div class="text-xs">
+                    <div id="hudTargetLine" class="font-orbitron text-[10px] sm:text-xs font-bold text-amber-300">
+                        1ST INNINGS
+                    </div>
+                    <div class="flex items-center gap-1 mt-0.5">
+                        <span class="text-[9px] font-orbitron text-slate-400">THIS OVER:</span>
+                        <div id="thisOverDots" class="flex items-center gap-1"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Kinetic Surge Bar + Coins + Quick Sim Bowling -->
+            <div class="cyber-panel rounded-2xl px-3 py-1.5 flex items-center gap-3 border border-cyan-400/40">
+                <div class="w-28 sm:w-36">
+                    <div class="flex justify-between text-[9px] font-orbitron font-bold mb-0.5">
+                        <span class="text-fuchsia-300">⚡ SURGE METER</span>
+                        <span id="hudSurgePct" class="text-amber-300">0%</span>
+                    </div>
+                    <div class="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-fuchsia-500/40">
+                        <div id="hudSurgeBar" class="h-full bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-amber-400 transition-all duration-150" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <button id="btnHudCoins" class="px-2.5 py-1 rounded-xl bg-slate-900 border border-amber-400/50 font-orbitron text-xs font-bold text-amber-300">
+                    🪙 <span id="hudCoins">300</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Center Delivery Speed & Bowler Telemetry Pill -->
+        <div class="w-full flex flex-col items-center pointer-events-none my-auto">
+            <div id="deliveryBanner" class="cyber-panel px-4 py-1 rounded-full border border-cyan-400/50 font-orbitron text-xs sm:text-sm font-bold text-cyan-200 shadow-lg transition-all">
+                READY ON TURF CREASE...
+            </div>
+        </div>
+
+        <!-- Bottom Interactive Controls Dock (Switches between Batting & Bowling) -->
+        <div class="w-full max-w-2xl mx-auto pointer-events-auto">
+            <!-- BATTING CONTROLS DOCK -->
+            <div id="battingControlsDock" class="cyber-panel rounded-2xl p-2.5 sm:p-3 border border-emerald-400/45 flex flex-col gap-2">
+                <!-- Row 1: Direction Selector (Off-Side / Straight / Leg-Side) -->
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[10px] font-orbitron text-slate-400 uppercase hidden sm:inline">AIM DIRECTION [A/S/D]:</span>
+                    <div class="grid grid-cols-3 gap-1.5 flex-1">
+                        <button data-dir="-1" class="aim-dir-btn cyber-btn py-1.5 rounded-xl font-orbitron text-[10px] sm:text-xs font-bold text-cyan-200">
+                            ↖ LEFT / OFF [A]
+                        </button>
+                        <button data-dir="0" class="aim-dir-btn cyber-btn py-1.5 rounded-xl font-orbitron text-[10px] sm:text-xs font-bold text-white ring-2 ring-emerald-400">
+                            ⬆ STRAIGHT [S]
+                        </button>
+                        <button data-dir="1" class="aim-dir-btn cyber-btn py-1.5 rounded-xl font-orbitron text-[10px] sm:text-xs font-bold text-cyan-200">
+                            ↗ RIGHT / LEG [D]
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Row 2: Shot Type Trigger Buttons -->
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="btnShotGround" class="cyber-btn py-2.5 sm:py-3 rounded-xl font-orbitron text-xs sm:text-sm font-black text-cyan-200 flex flex-col items-center justify-center">
+                        <span>🎯 GROUND DRIVE</span>
+                        <span class="text-[9px] font-normal text-slate-300">Safe 1s, 2s &amp; 4s [J]</span>
+                    </button>
+
+                    <button id="btnShotLoft" class="cyber-btn-emerald py-2.5 sm:py-3 rounded-xl font-orbitron text-xs sm:text-sm font-black text-white flex flex-col items-center justify-center shadow-lg">
+                        <span>⚡ LOFT SIX SHOT</span>
+                        <span class="text-[9px] font-normal text-emerald-100">Big 6s &amp; 2X Net [SPACE]</span>
+                    </button>
+
+                    <button id="btnShotSurge" disabled class="cyber-btn-gold opacity-45 py-2.5 sm:py-3 rounded-xl font-orbitron text-xs sm:text-sm font-black text-white flex flex-col items-center justify-center">
+                        <span>🔥 2X SURGE BLAST</span>
+                        <span id="surgeBtnSub" class="text-[9px] font-normal text-amber-100">Charge 100% [K]</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- BOWLING CONTROLS DOCK (Active during Player Bowling Innings) -->
+            <div id="bowlingControlsDock" class="hidden cyber-panel rounded-2xl p-2.5 sm:p-3 border border-amber-400/50 flex-col gap-2">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <span class="font-orbitron text-[10px] sm:text-xs font-bold text-amber-300">
+                        🎯 TAP PITCH TO AIM BOUNCE MARKER &amp; PICK DELIVERY:
+                    </span>
+                    <button id="btnQuickSimInnings" class="px-2.5 py-1 rounded-lg bg-slate-800 border border-amber-400/50 font-orbitron text-[10px] font-bold text-amber-300 hover:bg-slate-700">
+                        ⚡ QUICK-SIM BOWLING
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-4 gap-1.5">
+                    <button data-bowl="YORKER" class="bowl-type-btn cyber-btn py-1.5 rounded-xl font-orbitron text-[10px] font-bold text-white ring-2 ring-amber-400">
+                        🔥 YORKER<br><span class="text-[9px] text-cyan-300">145 KPH</span>
+                    </button>
+                    <button data-bowl="BOUNCER" class="bowl-type-btn cyber-btn py-1.5 rounded-xl font-orbitron text-[10px] font-bold text-white">
+                        ⚡ BOUNCER<br><span class="text-[9px] text-rose-300">138 KPH</span>
+                    </button>
+                    <button data-bowl="CUTTER" class="bowl-type-btn cyber-btn py-1.5 rounded-xl font-orbitron text-[10px] font-bold text-white">
+                        🌀 CUTTER<br><span class="text-[9px] text-emerald-300">112 KPH</span>
+                    </button>
+                    <button data-bowl="SPIN" class="bowl-type-btn cyber-btn py-1.5 rounded-xl font-orbitron text-[10px] font-bold text-white">
+                        🪄 MYSTERY<br><span class="text-[9px] text-fuchsia-300">98 KPH</span>
+                    </button>
+                </div>
+
+                <!-- Bowling Accuracy Meter Bar -->
+                <div class="flex items-center gap-3">
+                    <div class="flex-1 h-4 bg-slate-950 rounded-full overflow-hidden border border-slate-700 relative">
+                        <!-- Sweet spot green zone -->
+                        <div class="absolute top-0 bottom-0 left-[42%] width-[16%] w-[16%] bg-emerald-500/50 border-x border-emerald-300"></div>
+                        <div id="bowlMeterCursor" class="w-2.5 h-full bg-amber-400 shadow-[0_0_10px_#fbbf24] absolute top-0 left-0"></div>
+                    </div>
+                    <button id="btnBowlRelease" class="cyber-btn-gold px-5 py-2 rounded-xl font-orbitron text-xs sm:text-sm font-black text-white">
+                        ⚾ BOWL NOW [SPACE]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 4. GEAR & TURF SHOP MODAL (#shopModal)                                    -->
+    <!-- ========================================================================= -->
+    <div id="shopModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="cyber-panel rounded-3xl p-5 max-w-lg w-full max-h-[88vh] flex flex-col border border-amber-400/50">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-800">
+                <div>
+                    <span class="text-[10px] font-orbitron uppercase tracking-widest text-amber-400 block">NOVAFORGE SPORTS R&amp;D</span>
+                    <h2 class="font-orbitron text-xl font-black text-white">PLASMA BATS &amp; TURF ARENAS</h2>
+                </div>
+                <div class="px-3 py-1 rounded-full bg-slate-900 border border-amber-400/40 font-orbitron text-xs font-bold text-amber-300">
+                    🪙 <span id="shopCoins">300</span>
+                </div>
+            </div>
+
+            <div class="overflow-y-auto my-3 pr-1 space-y-4">
+                <div>
+                    <h3 class="font-orbitron text-xs font-bold text-emerald-300 uppercase tracking-wider mb-2">CUSTOM PLASMA BATS (POWER &amp; SWEET-SPOT)</h3>
+                    <div id="batShopList" class="grid grid-cols-2 gap-2.5"></div>
+                </div>
+                <div>
+                    <h3 class="font-orbitron text-xs font-bold text-cyan-300 uppercase tracking-wider mb-2">STADIUM TURF ARENA THEMES</h3>
+                    <div id="turfShopList" class="grid grid-cols-2 gap-2.5"></div>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800 flex justify-end">
+                <button id="btnCloseShop" class="cyber-btn px-6 py-2 rounded-xl font-orbitron text-xs font-bold text-white">
+                    DONE
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 5. SCORECARD & BOX TURF RULES MODAL (#scorecardModal)                     -->
+    <!-- ========================================================================= -->
+    <div id="scorecardModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="cyber-panel rounded-3xl p-5 max-w-lg w-full border border-cyan-400/50">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-800 mb-3">
+                <h2 class="font-orbitron text-lg sm:text-xl font-black text-white">📊 MATCH SCORECARD &amp; TURF RULES</h2>
+                <button id="btnCloseScorecard" class="cyber-btn px-3 py-1 rounded-lg font-orbitron text-xs text-cyan-200">✕</button>
+            </div>
+
+            <div id="scorecardSummary" class="bg-slate-950/90 p-3.5 rounded-2xl border border-slate-800 mb-3 text-xs space-y-1.5 font-semibold">
+                <!-- Populated dynamically -->
+            </div>
+
+            <div class="bg-slate-900/70 p-3.5 rounded-2xl border border-emerald-500/30 text-xs space-y-1.5 text-slate-300">
+                <div class="font-orbitron text-emerald-300 font-bold uppercase text-[11px]">⚡ CYBER TURF BOX CRICKET RULES:</div>
+                <div>• <b>2X SURGE ZONES:</b> Hit the glowing <span class="text-amber-300 font-bold">GOLD 2X PANELS</span> on the back net to score <b>8 RUNS</b> (ground) or <b>12 RUNS</b> (lofted)!</div>
+                <div>• <b>SIDE NET CUSHIONS:</b> Balls striking the left/right neon side nets score <b>1 or 2 Cyber-Runs</b>.</div>
+                <div>• <b>ROOF NET &amp; FIELDERS:</b> Mistiming a Loft Shot into the roof net or an AI fielder results in a <b>CAUGHT OUT!</b></div>
+                <div>• <b>KINETIC SURGE METER:</b> Every boundary charges your Surge Bar. At 100%, unleash an unstoppable <b>🔥 2X SURGE BLAST</b>!</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 6. INNINGS BREAK / MATCH RESULT MODAL (#resultModal)                      -->
+    <!-- ========================================================================= -->
+    <div id="resultModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="cyber-panel rounded-3xl p-6 max-w-md w-full text-center border border-emerald-400/60">
+            <div id="resultEmoji" class="text-4xl mb-2">🏆</div>
+            <h2 id="resultTitle" class="font-orbitron text-2xl font-black text-emerald-300 mb-1">INNINGS COMPLETE!</h2>
+            <p id="resultSub" class="text-xs sm:text-sm text-slate-300 mb-5"></p>
+            <div class="flex flex-col sm:flex-row gap-2.5">
+                <button id="btnResultHome" class="cyber-btn flex-1 py-3 rounded-xl font-orbitron text-xs font-bold text-cyan-200">
+                    🏠 HOME LOBBY
+                </button>
+                <button id="btnResultAction" class="cyber-btn-emerald flex-1 py-3 rounded-xl font-orbitron text-xs font-bold text-white">
+                    ▶ CONTINUE
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /********************************************************************
+         * NOVAFORGE STUDIOS // CYBER TURF: NEON BOX CRICKET
+         * Complete 3D-Perspective Box Cricket Engine + Procedural Web Audio
+         ********************************************************************/
+
+        const STORAGE_KEY = 'NOVAFORGE_CYBER_TURF_SAVE_V1';
+
+        const TEAMS = [
+            { id: 'strikers', name: 'MANGALURU STRIKERS', short: 'MNG', color: '#10b981', accent: '#34d399' },
+            { id: 'titans', name: 'NOVA TITANS', short: 'NOV', color: '#00f3ff', accent: '#38bdf8' },
+            { id: 'vortex', name: 'CYBER VORTEX', short: 'VTX', color: '#f43f5e', accent: '#fb7185' },
+            { id: 'kings', name: 'SOLAR KINGS', short: 'SLR', color: '#fbbf24', accent: '#fde047' }
+        ];
+
+        const PLASMA_BATS = [
+            { id: 'volt', name: 'Volt Blade', cost: 0, powerBonus: 1.0, windowBonus: 1.0, color: '#00f3ff', desc: 'Standard neon willow' },
+            { id: 'emerald', name: 'Turf Viper', cost: 180, powerBonus: 1.08, windowBonus: 1.12, color: '#10b981', desc: '+12% timing sweet-spot' },
+            { id: 'hammer', name: 'Nova Hammer', cost: 320, powerBonus: 1.18, windowBonus: 1.18, color: '#f43f5e', desc: '+18% exit velocity' },
+            { id: 'sovereign', name: 'Gold Sovereign', cost: 500, powerBonus: 1.28, windowBonus: 1.25, color: '#fbbf24', desc: 'Max 2X Surge accuracy' }
+        ];
+
+        const TURF_THEMES = [
+            { id: 'midnight', short: 'MIDNIGHT', name: 'Cyber Midnight', cost: 0, sky: '#030712', turf1: '#062c22', turf2: '#05221b', net: 'rgba(0, 243, 255, 0.22)' },
+            { id: 'emerald', short: 'STADIUM', name: 'Emerald Floodlight', cost: 200, sky: '#04121c', turf1: '#064e3b', turf2: '#043927', net: 'rgba(52, 211, 153, 0.28)' },
+            { id: 'sunset', short: 'SUNSET', name: 'Synthwave Sunset', cost: 300, sky: '#180526', turf1: '#1e1b4b', turf2: '#17153b', net: 'rgba(244, 63, 94, 0.28)' },
+            { id: 'gold', short: 'ROYAL', name: 'Imperial Gold Box', cost: 420, sky: '#140c04', turf1: '#1f2937', turf2: '#111827', net: 'rgba(251, 191, 36, 0.3)' }
+        ];
+
+        const defaultSave = {
+            coins: 300,
+            wins: 0,
+            sixes: 0,
+            wickets: 0,
+            highScore: 0,
+            lastDaily: '',
+            teamId: 'strikers',
+            format: 'BLITZ_2',
+            unlockedBats: ['volt'],
+            unlockedTurfs: ['midnight'],
+            activeBat: 'volt',
+            activeTurf: 'midnight'
+        };
+
+        let profile = loadProfile();
+
+        function loadProfile() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return JSON.parse(JSON.stringify(defaultSave));
+                return { ...JSON.parse(JSON.stringify(defaultSave)), ...JSON.parse(raw) };
+            } catch (e) {
+                return JSON.parse(JSON.stringify(defaultSave));
+            }
+        }
+
+        function saveProfile() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+            } catch (e) {}
+            updateAllEconomyUI();
+        }
+
+        // --- PROCEDURAL WEB AUDIO SYNTHESIZER ---
+        class CricketAudioSynth {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            }
+            toggleMute() {
+                this.muted = !this.muted;
+                return this.muted;
+            }
+            playBatCrack(quality = 1.0) {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(320 * quality, now);
+                osc.frequency.exponentialRampToValueAtTime(65, now + 0.11);
+                gain.gain.setValueAtTime(0.28, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            }
+            playBounce() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(190, now);
+                osc.frequency.exponentialRampToValueAtTime(75, now + 0.06);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.065);
+            }
+            playStumpShatter() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                [420, 290, 180].forEach((f, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(f, now + idx * 0.04);
+                    osc.frequency.exponentialRampToValueAtTime(48, now + idx * 0.04 + 0.18);
+                    gain.gain.setValueAtTime(0.18, now + idx * 0.04);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.04 + 0.19);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.04);
+                    osc.stop(now + idx * 0.04 + 0.19);
+                });
+            }
+            playCrowdHorn() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(f, now + i * 0.06);
+                    gain.gain.setValueAtTime(0.11, now + i * 0.06);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.28);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + i * 0.06);
+                    osc.stop(now + i * 0.06 + 0.28);
+                });
+            }
+        }
+
+        const audio = new CricketAudioSynth();
+
+        // --- 3D PERSPECTIVE BOX CRICKET PROJECTION ---
+        // World Coordinates:
+        // x: [-16 (Left Net), +16 (Right Net)]
+        // y: [0 (Turf Floor), 14 (Roof Net)]
+        // z: [0 (Batter Stumps), 22 (Bowler Stumps), 30 (Back 2X Surge Wall)]
+        const canvas = document.getElementById('turfCanvas');
+        const ctx = canvas.getContext('2d');
+        let cw = window.innerWidth;
+        let ch = window.innerHeight;
+
+        function resizeCanvas() {
+            cw = window.innerWidth;
+            ch = window.innerHeight;
+            canvas.width = cw;
+            canvas.height = ch;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function project3D(wx, wy, wz, shakeX = 0, shakeY = 0) {
+            const camX = 0;
+            const camY = 5.4;
+            const camZ = -9.5;
+            const fov = Math.min(cw, ch) * 0.92;
+            const dz = Math.max(1.2, wz - camZ);
+            const scale = fov / dz;
+            const sx = cw * 0.5 + (wx - camX) * scale + shakeX;
+            const sy = ch * 0.63 - (wy - camY) * scale + shakeY;
+            return { x: sx, y: sy, scale };
+        }
+
+        // --- MATCH & GAMEPLAY STATE ---
+        let isLobbyOpen = true;
+        let hasActiveMatch = false;
+
+        let match = {
+            innings: 1, // 1: Player Batting, 2: Player Bowling (or Target Chase)
+            maxBalls: 12,
+            maxWickets: 5,
+            playerRuns: 0,
+            playerWickets: 0,
+            playerBalls: 0,
+            aiRuns: 0,
+            aiWickets: 0,
+            aiBalls: 0,
+            targetRuns: null,
+            thisOverLog: [],
+            surgeMeter: 0,
+            aimDir: 0, // -1: Left/Off, 0: Straight, 1: Right/Leg
+            selectedBowlType: 'YORKER',
+            bowlCursorPos: 0,
+            bowlCursorDir: 1
+        };
+
+        // Ball & Delivery State
+        // phase: 'IDLE', 'RUNUP', 'BOWLED', 'HIT_FLIGHT', 'DEAD_BALL'
+        let delivery = {
+            phase: 'IDLE',
+            timer: 0,
+            type: 'YORKER',
+            speedKph: 142,
+            startX: 0.4,
+            bounceX: 0,
+            bounceZ: 4.2,
+            endX: 0,
+            swingCurve: 0,
+            hasBounced: false,
+            batSwung: false,
+            swingTime: 0,
+            ballX: 0,
+            ballY: 2.2,
+            ballZ: 22,
+            vx: 0,
+            vy: 0,
+            vz: 0,
+            progress: 0, // 0 at bowler release (z=22), 1.0 at batter crease (z=1.2)
+            flightDuration: 0.78,
+            trail: []
+        };
+
+        let bowlerAnimZ = 24.5;
+        let batSwingAngle = 0;
+        let stumpsBroken = false;
+        let flyingStumps = [];
+        let fielders = [];
+        let particles = [];
+        let bannerPopups = [];
+        let cameraShake = 0;
+        let slowMoFactor = 1.0;
+
+        function initFielders() {
+            fielders = [
+                { x: -7.5, z: 11.5, baseX: -7.5, color: '#f43f5e' },
+                { x: 7.5, z: 11.5, baseX: 7.5, color: '#f43f5e' },
+                { x: -10.5, z: 19.5, baseX: -10.5, color: '#f43f5e' },
+                { x: 10.5, z: 19.5, baseX: 10.5, color: '#f43f5e' },
+                { x: 0, z: 25.0, baseX: 0, color: '#f43f5e' }
+            ];
+        }
+
+        function getActiveBat() {
+            return PLASMA_BATS.find(b => b.id === profile.activeBat) || PLASMA_BATS[0];
+        }
+
+        function getActiveTurf() {
+            return TURF_THEMES.find(t => t.id === profile.activeTurf) || TURF_THEMES[0];
+        }
+
+        function getPlayerTeam() {
+            return TEAMS.find(t => t.id === profile.teamId) || TEAMS[0];
+        }
+
+        function startNewMatch() {
+            const fmt = profile.format;
+            const maxBalls = fmt === 'CLASH_5' ? 30 : 12;
+
+            match = {
+                innings: 1,
+                maxBalls,
+                maxWickets: 5,
+                playerRuns: 0,
+                playerWickets: 0,
+                playerBalls: 0,
+                aiRuns: 0,
+                aiWickets: 0,
+                aiBalls: 0,
+                targetRuns: fmt === 'CHASE' ? 48 : null,
+                thisOverLog: [],
+                surgeMeter: 0,
+                aimDir: 0,
+                selectedBowlType: 'YORKER',
+                bowlCursorPos: 0.1,
+                bowlCursorDir: 1
+            };
+
+            hasActiveMatch = true;
+            initFielders();
+            resetForNextDelivery();
+            updateHudUI();
+        }
+
+        function resetForNextDelivery() {
+            stumpsBroken = false;
+            flyingStumps = [];
+            batSwingAngle = 0;
+            bowlerAnimZ = 25.0;
+            slowMoFactor = 1.0;
+            delivery.phase = 'IDLE';
+            delivery.trail = [];
+            delivery.batSwung = false;
+            delivery.hasBounced = false;
+            delivery.ballX = 0.3;
+            delivery.ballY = 2.1;
+            delivery.ballZ = 22.0;
+
+            fielders.forEach(f => { f.x = f.baseX; });
+
+            if (match.innings === 1) {
+                // Player is Batting -> AI Bowler automatically starts run-up after brief pause
+                document.getElementById('battingControlsDock').classList.remove('hidden');
+                document.getElementById('battingControlsDock').classList.add('flex');
+                document.getElementById('bowlingControlsDock').classList.add('hidden');
+                document.getElementById('bowlingControlsDock').classList.remove('flex');
+                setDeliveryBanner('BOWLER RUNNING IN... WATCH THE BOUNCE RING!');
+                setTimeout(() => {
+                    if (!isLobbyOpen && delivery.phase === 'IDLE' && match.innings === 1) {
+                        startAIBowlingDelivery();
+                    }
+                }, 900);
+            } else {
+                // Player is Bowling -> Wait for player to stop accuracy meter
+                document.getElementById('battingControlsDock').classList.add('hidden');
+                document.getElementById('battingControlsDock').classList.remove('flex');
+                document.getElementById('bowlingControlsDock').classList.remove('hidden');
+                document.getElementById('bowlingControlsDock').classList.add('flex');
+                setDeliveryBanner('YOUR BOWLING: TAP PITCH OR STOP THE ACCURACY METER!');
+            }
+        }
+
+        function startAIBowlingDelivery() {
+            if (delivery.phase !== 'IDLE') return;
+            const types = [
+                { id: 'YORKER', name: 'FAST YORKER', kph: 145, duration: 0.72, bounceZ: 2.3, swing: 0.2 },
+                { id: 'BOUNCER', name: 'FIERY BOUNCER', kph: 138, duration: 0.76, bounceZ: 7.5, swing: -0.15 },
+                { id: 'CUTTER', name: 'SLOWER OFF-CUTTER', kph: 112, duration: 0.92, bounceZ: 4.8, swing: 0.85 },
+                { id: 'SPIN', name: 'MYSTERY LEG-SPIN', kph: 98, duration: 1.02, bounceZ: 4.2, swing: -1.1 }
+            ];
+            const chosen = types[Math.floor(Math.random() * types.length)];
+            delivery.type = chosen.id;
+            delivery.speedKph = chosen.kph + Math.floor(Math.random() * 5 - 2);
+            delivery.flightDuration = chosen.duration;
+            delivery.startX = (Math.random() - 0.5) * 1.2;
+            delivery.bounceX = (Math.random() - 0.5) * 1.4;
+            delivery.bounceZ = chosen.bounceZ;
+            delivery.endX = delivery.bounceX + chosen.swing;
+            delivery.progress = 0;
+            delivery.phase = 'RUNUP';
+            delivery.timer = 0.45;
+            setDeliveryBanner(`⚾ ${chosen.name} // ${delivery.speedKph} KPH`);
+        }
+
+        // --- PLAYER BATTING SHOT EXECUTION ---
+        function triggerPlayerBatSwing(shotMode) {
+            if (isLobbyOpen || match.innings !== 1) return;
+            audio.init();
+
+            // If idle, hurry bowler into runup
+            if (delivery.phase === 'IDLE') {
+                startAIBowlingDelivery();
+                return;
+            }
+            if (delivery.phase !== 'BOWLED' || delivery.batSwung) return;
+
+            delivery.batSwung = true;
+            batSwingAngle = 1.45;
+
+            const bat = getActiveBat();
+            // Sweet spot is when delivery.progress is around 0.88 to 0.98
+            const timingDiff = delivery.progress - 0.92;
+            const absDiff = Math.abs(timingDiff);
+            const windowScale = bat.windowBonus;
+
+            if (shotMode === 'SURGE' && match.surgeMeter >= 100) {
+                match.surgeMeter = 0;
+                executeHitBall(1.45 * bat.powerBonus, true, true, '🔥 2X OVERDRIVE SURGE BLAST!');
+                return;
+            }
+
+            if (absDiff <= 0.085 * windowScale) {
+                // PERFECT TIMING!
+                const isLoft = shotMode === 'LOFT';
+                executeHitBall(1.22 * bat.powerBonus, isLoft, false, '⚡ PERFECT TIMING!');
+            } else if (absDiff <= 0.17 * windowScale) {
+                // GOOD / EDGED TIMING
+                const isLoft = shotMode === 'LOFT';
+                const label = timingDiff < 0 ? 'EARLY TIMING!' : 'LATE TIMING!';
+                executeHitBall(0.84 * bat.powerBonus, isLoft, false, label);
+            } else {
+                // SWING AND A MISS
+                spawnBannerPopup(0, 3.2, 1.5, timingDiff < 0 ? 'TOO EARLY!' : 'TOO LATE!', '#f43f5e');
+            }
+        }
+
+        function executeHitBall(powerMult, isLoft, isSurgeBlast, timingLabel) {
+            delivery.phase = 'HIT_FLIGHT';
+            audio.playBatCrack(powerMult);
+            cameraShake = isSurgeBlast ? 18 : (powerMult > 1.1 ? 11 : 5);
+            if (powerMult > 1.15) slowMoFactor = 0.45;
+            setTimeout(() => { slowMoFactor = 1.0; }, 260);
+
+            spawnParticles3D(delivery.ballX, delivery.ballY, delivery.ballZ, isSurgeBlast ? '#fbbf24' : '#00f3ff', 24);
+            spawnBannerPopup(delivery.ballX, delivery.ballY + 1.5, delivery.ballZ, timingLabel, isSurgeBlast ? '#fbbf24' : '#10b981');
+
+            // Launch velocity toward back wall (z=30) and chosen aim direction (-1, 0, +1)
+            const dirSpread = match.aimDir * (10.5 + Math.random() * 3.5) + (Math.random() - 0.5) * 3.0;
+            delivery.vx = dirSpread * powerMult;
+            delivery.vz = (29.0 + Math.random() * 6.0) * powerMult;
+            delivery.vy = isSurgeBlast ? 11.5 : (isLoft ? (9.5 + Math.random() * 3.5) * powerMult : 2.2);
+            delivery.isLoftHit = isLoft;
+            delivery.isSurgeHit = isSurgeBlast;
+        }
+
+        // --- PLAYER BOWLING EXECUTION ---
+        function triggerPlayerBowlRelease() {
+            if (isLobbyOpen || match.innings !== 2 || delivery.phase !== 'IDLE') return;
+            audio.init();
+
+            // Accuracy based on how close bowlCursorPos is to 0.50 (sweet spot [0.42, 0.58])
+            const accuracyError = Math.abs(match.bowlCursorPos - 0.5);
+            const isPerfectYorker = accuracyError <= 0.09;
+
+            delivery.phase = 'RUNUP';
+            delivery.timer = 0.35;
+            delivery.progress = 0;
+            delivery.flightDuration = match.selectedBowlType === 'YORKER' ? 0.68 : 0.82;
+            delivery.startX = 0.3;
+            delivery.endX = (Math.random() - 0.5) * (isPerfectYorker ? 0.3 : 1.6);
+            delivery.isPerfectBowl = isPerfectYorker;
+
+            setDeliveryBanner(isPerfectYorker ? '🔥 PINPOINT DELIVERY!' : '⚾ DELIVERY RELEASED!');
+        }
+
+        // --- BALL PHYSICS & BOX CRICKET SCORING RESOLUTION ---
+        function updateGameplay(dt) {
+            if (isLobbyOpen) return;
+            const effDt = dt * slowMoFactor;
+
+            if (cameraShake > 0) cameraShake = Math.max(0, cameraShake - dt * 35);
+            if (batSwingAngle > 0) batSwingAngle = Math.max(0, batSwingAngle - dt * 6.5);
+
+            // Oscillate bowling accuracy meter when player is bowling
+            if (match.innings === 2 && delivery.phase === 'IDLE') {
+                match.bowlCursorPos += match.bowlCursorDir * dt * 1.15;
+                if (match.bowlCursorPos >= 1) {
+                    match.bowlCursorPos = 1;
+                    match.bowlCursorDir = -1;
+                } else if (match.bowlCursorPos <= 0) {
+                    match.bowlCursorPos = 0;
+                    match.bowlCursorDir = 1;
+                }
+                const cursorEl = document.getElementById('bowlMeterCursor');
+                if (cursorEl) cursorEl.style.left = `${match.bowlCursorPos * 96}%`;
+            }
+
+            // 1. Bowler Run-up Phase
+            if (delivery.phase === 'RUNUP') {
+                delivery.timer -= effDt;
+                bowlerAnimZ = 22.0 + Math.max(0, delivery.timer * 7.0);
+                if (delivery.timer <= 0) {
+                    delivery.phase = 'BOWLED';
+                    delivery.progress = 0;
+                }
+            }
+
+            // 2. Ball Bowled Toward Batter Crease (z: 22 -> 0)
+            if (delivery.phase === 'BOWLED') {
+                delivery.progress += effDt / delivery.flightDuration;
+                const p = delivery.progress;
+
+                delivery.ballZ = 22.0 * (1 - p);
+                delivery.ballX = delivery.startX * (1 - p) + delivery.endX * p;
+
+                // Parabolic bounce at bounceZ
+                const bounceProgress = 1 - (delivery.bounceZ / 22.0);
+                if (p < bounceProgress) {
+                    const bp = p / bounceProgress;
+                    delivery.ballY = 2.2 * (1 - bp * bp);
+                } else {
+                    if (!delivery.hasBounced) {
+                        delivery.hasBounced = true;
+                        audio.playBounce();
+                        spawnParticles3D(delivery.ballX, 0.1, delivery.ballZ, '#38bdf8', 8);
+                    }
+                    const ap = (p - bounceProgress) / (1 - bounceProgress);
+                    const maxBounceH = delivery.type === 'BOUNCER' ? 2.1 : 1.15;
+                    delivery.ballY = Math.sin(ap * Math.PI * 0.75) * maxBounceH;
+                }
+
+                recordBallTrail();
+
+                // If Player is Bowling (Innings 2), let AI Batter attempt a swing at progress >= 0.90
+                if (match.innings === 2 && p >= 0.90 && !delivery.batSwung) {
+                    delivery.batSwung = true;
+                    batSwingAngle = 1.4;
+                    if (delivery.isPerfectBowl && Math.random() < 0.62) {
+                        // AI misses pinpoint delivery -> BOWLED!
+                    } else {
+                        // AI hits ball
+                        const aiPower = delivery.isPerfectBowl ? 0.72 : (0.95 + Math.random() * 0.35);
+                        match.aimDir = [-1, 0, 1][Math.floor(Math.random() * 3)];
+                        executeHitBall(aiPower, Math.random() < 0.45, false, 'AI STROKE!');
+                        return;
+                    }
+                }
+
+                // Check if ball reaches the LED Stumps (progress >= 1.0)
+                if (p >= 1.0) {
+                    if (Math.abs(delivery.ballX) <= 0.85) {
+                        // CLEAN BOWLED! SHATTER LED STUMPS!
+                        shatterStumps();
+                        resolveBallOutcome(0, true, '💥 CLEAN BOWLED! STUMPS SHATTERED!');
+                    } else {
+                        resolveBallOutcome(0, false, 'DOT BALL!');
+                    }
+                }
+            }
+
+            // 3. Ball Hit Into the 3D Box Turf Cage
+            if (delivery.phase === 'HIT_FLIGHT') {
+                delivery.ballX += delivery.vx * effDt;
+                delivery.ballY += delivery.vy * effDt;
+                delivery.ballZ += delivery.vz * effDt;
+                delivery.vy -= 18.5 * effDt; // Gravity
+
+                // Floor bounce inside box
+                if (delivery.ballY <= 0.25 && delivery.vy < 0) {
+                    delivery.ballY = 0.25;
+                    delivery.vy = -delivery.vy * 0.55;
+                    audio.playBounce();
+                }
+
+                recordBallTrail();
+
+                // AI Fielders move laterally toward ball X
+                for (const f of fielders) {
+                    const dx = delivery.ballX - f.x;
+                    f.x += Math.sign(dx) * Math.min(Math.abs(dx), 9.5 * effDt);
+
+                    // Check Fielder Catch / Stop
+                    if (Math.abs(delivery.ballZ - f.z) < 1.2 && Math.abs(delivery.ballX - f.x) < 1.35 && delivery.ballY < 3.2) {
+                        if (delivery.isLoftHit && !delivery.isSurgeHit && delivery.ballY > 0.6) {
+                            resolveBallOutcome(0, true, '🧤 CAUGHT BY FIELDER!');
+                        } else {
+                            const singleRun = delivery.ballZ > 15 ? 1 : 0;
+                            resolveBallOutcome(singleRun, false, singleRun ? 'QUICK SINGLE (1 RUN)' : 'FIELDED! DOT BALL');
+                        }
+                        return;
+                    }
+                }
+
+                // Check Roof Net Collision (y >= 13.5) -> Caught off Upper Roof Net unless Surge Blast!
+                if (delivery.ballY >= 13.5 && !delivery.isSurgeHit) {
+                    resolveBallOutcome(0, true, '🕸️ CAUGHT OFF UPPER ROOF NET!');
+                    return;
+                }
+
+                // Check Left / Right Side Net Cushion (|x| >= 15.5) -> 1 or 2 Box Turf Runs
+                if (Math.abs(delivery.ballX) >= 15.5) {
+                    const cushionRuns = delivery.ballZ > 16 ? 2 : 1;
+                    resolveBallOutcome(cushionRuns, false, `⚡ SIDE NET CUSHION! +${cushionRuns} RUNS`);
+                    return;
+                }
+
+                // Check Back Stadium Wall & 2X SURGE ZONES (z >= 29.5)
+                if (delivery.ballZ >= 29.5) {
+                    // Two glowing 2X Surge Zones on the back wall: [-11 to -4.5] and [+4.5 to +11]
+                    const inSurgeZone = (Math.abs(delivery.ballX) >= 4.2 && Math.abs(delivery.ballX) <= 11.8) || delivery.isSurgeHit;
+                    const isSix = delivery.isLoftHit || delivery.isSurgeHit || delivery.ballY > 2.8;
+                    let runs = isSix ? 6 : 4;
+                    if (inSurgeZone) runs *= 2; // 8 or 12 runs!
+
+                    audio.playCrowdHorn();
+                    cameraShake = inSurgeZone ? 20 : 12;
+                    spawnParticles3D(delivery.ballX, Math.max(2, delivery.ballY), 29.0, inSurgeZone ? '#fbbf24' : '#10b981', 42);
+
+                    const msg = inSurgeZone
+                        ? `🔥 2X SURGE ZONE HIT! +${runs} RUNS! 🔥`
+                        : (isSix ? '🚀 MASSIVE SIX! +6 RUNS!' : '⚡ CRACKING FOUR! +4 RUNS!');
+                    resolveBallOutcome(runs, false, msg);
+                    return;
+                }
+            }
+
+            // Update Flying LED Stumps
+            for (const s of flyingStumps) {
+                s.x += s.vx * effDt;
+                s.y += s.vy * effDt;
+                s.z += s.vz * effDt;
+                s.vy -= 18 * effDt;
+                s.rot += s.vrot * effDt;
+            }
+
+            // Update 3D Particles & Floating Banners
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const pt = particles[i];
+                pt.x += pt.vx * effDt;
+                pt.y += pt.vy * effDt;
+                pt.z += pt.vz * effDt;
+                pt.alpha -= dt * 1.5;
+                if (pt.alpha <= 0) particles.splice(i, 1);
+            }
+
+            for (let i = bannerPopups.length - 1; i >= 0; i--) {
+                const bp = bannerPopups[i];
+                bp.y += dt * 1.8;
+                bp.alpha -= dt * 0.85;
+                if (bp.alpha <= 0) bannerPopups.splice(i, 1);
+            }
+        }
+
+        function recordBallTrail() {
+            delivery.trail.push({
+                x: delivery.ballX,
+                y: delivery.ballY,
+                z: delivery.ballZ,
+                surge: delivery.isSurgeHit
+            });
+            if (delivery.trail.length > 18) delivery.trail.shift();
+        }
+
+        function shatterStumps() {
+            stumpsBroken = true;
+            audio.playStumpShatter();
+            cameraShake = 16;
+            [-0.45, 0, 0.45].forEach(sx => {
+                flyingStumps.push({
+                    x: sx,
+                    y: 1.0,
+                    z: 0,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: 5 + Math.random() * 4,
+                    vz: -4 - Math.random() * 4,
+                    rot: 0,
+                    vrot: (Math.random() - 0.5) * 14
+                });
+            });
+            spawnParticles3D(0, 1.2, 0, '#f43f5e', 30);
+        }
+
+        function resolveBallOutcome(runs, isOut, message) {
+            delivery.phase = 'DEAD_BALL';
+            setDeliveryBanner(message);
+            spawnBannerPopup(0, 4.2, 8, message, isOut ? '#f43f5e' : (runs >= 6 ? '#fbbf24' : '#00f3ff'));
+
+            const badge = isOut ? 'W' : String(runs);
+            match.thisOverLog.push(badge);
+            if (match.thisOverLog.length > 6) match.thisOverLog = [badge];
+
+            if (match.innings === 1) {
+                match.playerBalls++;
+                if (isOut) {
+                    match.playerWickets++;
+                } else {
+                    match.playerRuns += runs;
+                    match.surgeMeter = Math.min(100, match.surgeMeter + (runs >= 4 ? 38 : 15));
+                    if (runs >= 6) {
+                        profile.sixes++;
+                        awardTurfCoins(25);
+                    } else if (runs >= 4) {
+                        awardTurfCoins(12);
+                    }
+                    if (match.playerRuns > profile.highScore) {
+                        profile.highScore = match.playerRuns;
+                    }
+                    saveProfile();
+                }
+            } else {
+                match.aiBalls++;
+                if (isOut) {
+                    match.aiWickets++;
+                    profile.wickets++;
+                    awardTurfCoins(30);
+                    saveProfile();
+                } else {
+                    match.aiRuns += runs;
+                }
+            }
+
+            updateHudUI();
+
+            setTimeout(() => {
+                checkInningsOrMatchEnd();
+            }, 1350);
+        }
+
+        function checkInningsOrMatchEnd() {
+            // Check if Target Chased in Innings 1 (Chase Mode)
+            if (match.innings === 1 && match.targetRuns !== null) {
+                if (match.playerRuns >= match.targetRuns) {
+                    finishMatch(true, `TARGET CHASED! YOU WON WITH ${match.maxBalls - match.playerBalls} BALLS TO SPARE!`);
+                    return;
+                }
+                if (match.playerBalls >= match.maxBalls || match.playerWickets >= match.maxWickets) {
+                    finishMatch(false, `FELL SHORT BY ${match.targetRuns - match.playerRuns} RUNS!`);
+                    return;
+                }
+                resetForNextDelivery();
+                return;
+            }
+
+            // Standard 2-Innings Match Flow
+            if (match.innings === 1) {
+                if (match.playerBalls >= match.maxBalls || match.playerWickets >= match.maxWickets) {
+                    // Switch to Innings 2 (Player Bowling to defend target)
+                    match.targetRuns = match.playerRuns + 1;
+                    match.innings = 2;
+                    match.thisOverLog = [];
+                    showResultModal(
+                        '⚾',
+                        'INNINGS BREAK!',
+                        `You scored ${match.playerRuns}/${match.playerWickets}. Defend ${match.targetRuns} runs in ${match.maxBalls} balls (or Quick-Sim)!`,
+                        'BOWL 2ND INNINGS ▶',
+                        () => {
+                            closeResultModal();
+                            updateHudUI();
+                            resetForNextDelivery();
+                        }
+                    );
+                    return;
+                }
+                resetForNextDelivery();
+            } else {
+                // Innings 2 checks
+                if (match.aiRuns >= match.targetRuns) {
+                    finishMatch(false, `OPPONENT CHASED ${match.targetRuns} RUNS!`);
+                    return;
+                }
+                if (match.aiBalls >= match.maxBalls || match.aiWickets >= match.maxWickets) {
+                    if (match.aiRuns < match.playerRuns) {
+                        finishMatch(true, `VICTORY! YOU DEFENDED YOUR TOTAL BY ${match.playerRuns - match.aiRuns} RUNS!`);
+                    } else {
+                        finishMatch(true, `THRILLING SUPER TIE! +100 BONUS COINS!`);
+                    }
+                    return;
+                }
+                resetForNextDelivery();
+            }
+        }
+
+        function finishMatch(playerWon, summaryText) {
+            hasActiveMatch = false;
+            if (playerWon) {
+                profile.wins++;
+                awardTurfCoins(150);
+                audio.playCrowdHorn();
+            }
+            saveProfile();
+
+            showResultModal(
+                playerWon ? '🏆' : '⚡',
+                playerWon ? 'TURF VICTORY!' : 'MATCH COMPLETE',
+                `${summaryText} ${playerWon ? '(+150 🪙 Turf-Coins)' : ''}`,
+                '▶ PLAY REMATCH',
+                () => {
+                    closeResultModal();
+                    startNewMatch();
+                }
+            );
+        }
+
+        function awardTurfCoins(amount) {
+            profile.coins += amount;
+            saveProfile();
+        }
+
+        // --- 3D TURF ARENA RENDERING ---
+        function renderArena() {
+            const turf = getActiveTurf();
+            const team = getPlayerTeam();
+            const bat = getActiveBat();
+
+            let sx = 0, sy = 0;
+            if (cameraShake > 0) {
+                sx = (Math.random() - 0.5) * cameraShake;
+                sy = (Math.random() - 0.5) * cameraShake;
+            }
+
+            ctx.fillStyle = turf.sky;
+            ctx.fillRect(0, 0, cw, ch);
+
+            // 1. Draw 3D Box Cricket Turf Floor Stripes
+            const zSteps = 10;
+            for (let i = 0; i < zSteps; i++) {
+                const z0 = -2 + (i / zSteps) * 32;
+                const z1 = -2 + ((i + 1) / zSteps) * 32;
+                const pTL = project3D(-16, 0, z1, sx, sy);
+                const pTR = project3D(16, 0, z1, sx, sy);
+                const pBR = project3D(16, 0, z0, sx, sy);
+                const pBL = project3D(-16, 0, z0, sx, sy);
+
+                ctx.fillStyle = i % 2 === 0 ? turf.turf1 : turf.turf2;
+                ctx.beginPath();
+                ctx.moveTo(pTL.x, pTL.y);
+                ctx.lineTo(pTR.x, pTR.y);
+                ctx.lineTo(pBR.x, pBR.y);
+                ctx.lineTo(pBL.x, pBL.y);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // 2. Draw Cage Netting (Left Wall, Right Wall, Roof Net & Back Wall)
+            ctx.strokeStyle = turf.net;
+            ctx.lineWidth = 1;
+            for (let z = 0; z <= 30; z += 3) {
+                const lBot = project3D(-16, 0, z, sx, sy);
+                const lTop = project3D(-16, 14, z, sx, sy);
+                const rTop = project3D(16, 14, z, sx, sy);
+                const rBot = project3D(16, 0, z, sx, sy);
+
+                ctx.beginPath();
+                ctx.moveTo(lBot.x, lBot.y);
+                ctx.lineTo(lTop.x, lTop.y);
+                ctx.lineTo(rTop.x, rTop.y);
+                ctx.lineTo(rBot.x, rBot.y);
+                ctx.stroke();
+            }
+
+            // 3. Draw Glowing 2X SURGE ZONES on Back Net Wall (z = 30)
+            drawBackWallSurgeZone(-11.5, -4.2, sx, sy);
+            drawBackWallSurgeZone(4.2, 11.5, sx, sy);
+
+            // 4. Draw LED Scoreboard Wall on Upper Back Net
+            const sbTL = project3D(-4.0, 11.8, 30, sx, sy);
+            const sbBR = project3D(4.0, 8.6, 30, sx, sy);
+            ctx.fillStyle = 'rgba(4, 9, 20, 0.92)';
+            ctx.strokeStyle = '#00f3ff';
+            ctx.lineWidth = 2;
+            ctx.fillRect(sbTL.x, sbTL.y, sbBR.x - sbTL.x, sbBR.y - sbTL.y);
+            ctx.strokeRect(sbTL.x, sbTL.y, sbBR.x - sbTL.x, sbBR.y - sbTL.y);
+
+            ctx.fillStyle = '#00f3ff';
+            ctx.font = `900 ${Math.max(10, Math.floor((sbBR.x - sbTL.x) * 0.14))}px 'Orbitron', sans-serif`;
+            ctx.textAlign = 'center';
+            const runs = match.innings === 1 ? match.playerRuns : match.aiRuns;
+            const wkts = match.innings === 1 ? match.playerWickets : match.aiWickets;
+            ctx.fillText(`${ team.short } ${runs}/${wkts}`, (sbTL.x + sbBR.x) / 2, (sbTL.y + sbBR.y) / 2 + 4);
+
+            // 5. Draw Synthetic Pitch Strip & Crease Lines (x: -2.2 to +2.2, z: -1 to 23)
+            const pFL = project3D(-2.2, 0, 23, sx, sy);
+            const pFR = project3D(2.2, 0, 23, sx, sy);
+            const pNR = project3D(2.2, 0, -1, sx, sy);
+            const pNL = project3D(-2.2, 0, -1, sx, sy);
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.moveTo(pFL.x, pFL.y);
+            ctx.lineTo(pFR.x, pFR.y);
+            ctx.lineTo(pNR.x, pNR.y);
+            ctx.lineTo(pNL.x, pNL.y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // 6. Draw Aim Direction Cone from Batter Crease
+            const aimTargetX = match.aimDir * 11;
+            const aimStart = project3D(0, 0.05, 1.0, sx, sy);
+            const aimEnd = project3D(aimTargetX, 0.05, 26.0, sx, sy);
+            ctx.save();
+            ctx.strokeStyle = 'rgba(16, 185, 129, 0.28)';
+            ctx.setLineDash([6, 6]);
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(aimStart.x, aimStart.y);
+            ctx.lineTo(aimEnd.x, aimEnd.y);
+            ctx.stroke();
+            ctx.restore();
+
+            // 7. Draw Pitch Bounce Target Ring
+            if (delivery.phase === 'RUNUP' || delivery.phase === 'BOWLED' || match.innings === 2) {
+                const ringPos = project3D(delivery.bounceX, 0.05, delivery.bounceZ, sx, sy);
+                ctx.save();
+                ctx.strokeStyle = '#fbbf24';
+                ctx.lineWidth = 2.5;
+                ctx.shadowColor = '#fbbf24';
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.ellipse(ringPos.x, ringPos.y, 16 * ringPos.scale * 0.04, 7 * ringPos.scale * 0.04, 0, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // 8. Draw Bowler Stumps (z = 22) & AI Fielders
+            drawStumpsAtZ(22, '#00f3ff', sx, sy);
+
+            for (const f of fielders) {
+                drawPlayerAvatar3D(f.x, f.z, f.color, false, sx, sy);
+            }
+
+            // 9. Draw Animated Bowler
+            drawPlayerAvatar3D(0.4, bowlerAnimZ, '#f43f5e', false, sx, sy);
+
+            // 10. Draw Electric Ball Trail & Glowing Cricket Ball
+            if (delivery.trail.length > 1) {
+                for (let i = 1; i < delivery.trail.length; i++) {
+                    const t0 = project3D(delivery.trail[i - 1].x, delivery.trail[i - 1].y, delivery.trail[i - 1].z, sx, sy);
+                    const t1 = project3D(delivery.trail[i].x, delivery.trail[i].y, delivery.trail[i].z, sx, sy);
+                    ctx.save();
+                    ctx.strokeStyle = delivery.trail[i].surge ? '#fbbf24' : '#00f3ff';
+                    ctx.globalAlpha = (i / delivery.trail.length) * 0.85;
+                    ctx.lineWidth = (i / delivery.trail.length) * 8;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(t0.x, t0.y);
+                    ctx.lineTo(t1.x, t1.y);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
+            if (delivery.phase === 'BOWLED' || delivery.phase === 'HIT_FLIGHT') {
+                const bProj = project3D(delivery.ballX, delivery.ballY, delivery.ballZ, sx, sy);
+                const shadowProj = project3D(delivery.ballX, 0.02, delivery.ballZ, sx, sy);
+
+                // Ground Shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+                ctx.beginPath();
+                ctx.ellipse(shadowProj.x, shadowProj.y, Math.max(3, bProj.scale * 0.25), Math.max(1.5, bProj.scale * 0.1), 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Glowing Core Ball
+                const bRadius = Math.max(4.5, bProj.scale * 0.24);
+                ctx.save();
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = delivery.isSurgeHit ? '#fbbf24' : '#00f3ff';
+                ctx.shadowBlur = 16;
+                ctx.beginPath();
+                ctx.arc(bProj.x, bProj.y, bRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // 11. Draw Batter & Glowing Plasma Bat near z = 1.2
+            drawBatterWithPlasmaBat(-0.9, 1.2, team.color, bat.color, sx, sy);
+
+            // 12. Draw Near LED Stumps (z = 0) or Shattered Flying Stumps
+            if (!stumpsBroken) {
+                drawStumpsAtZ(0, '#ff007f', sx, sy);
+            } else {
+                for (const fs of flyingStumps) {
+                    const sp = project3D(fs.x, Math.max(0.2, fs.y), fs.z, sx, sy);
+                    ctx.save();
+                    ctx.translate(sp.x, sp.y);
+                    ctx.rotate(fs.rot);
+                    ctx.strokeStyle = '#ff007f';
+                    ctx.lineWidth = 4;
+                    ctx.shadowColor = '#ff007f';
+                    ctx.shadowBlur = 12;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -18);
+                    ctx.lineTo(0, 18);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            }
+
+            // 13. Render 3D Sparks & Banner Popups
+            for (const pt of particles) {
+                const pp = project3D(pt.x, pt.y, pt.z, sx, sy);
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, pt.alpha);
+                ctx.fillStyle = pt.color;
+                ctx.shadowColor = pt.color;
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(pp.x, pp.y, pt.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            for (const bp of bannerPopups) {
+                const p = project3D(bp.x, bp.y, bp.z, sx, sy);
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, bp.alpha);
+                ctx.font = `900 ${Math.max(13, Math.min(24, Math.floor(cw * 0.038)))}px 'Orbitron', sans-serif`;
+                ctx.fillStyle = bp.color;
+                ctx.textAlign = 'center';
+                ctx.shadowColor = bp.color;
+                ctx.shadowBlur = 12;
+                ctx.fillText(bp.text, p.x, p.y);
+                ctx.restore();
+            }
+        }
+
+        function drawBackWallSurgeZone(x1, x2, sx, sy) {
+            const tl = project3D(x1, 9.5, 30, sx, sy);
+            const tr = project3D(x2, 9.5, 30, sx, sy);
+            const br = project3D(x2, 0.5, 30, sx, sy);
+            const bl = project3D(x1, 0.5, 30, sx, sy);
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.14)';
+            ctx.strokeStyle = '#fbbf24';
+            ctx.lineWidth = 2.5;
+            ctx.shadowColor = '#fbbf24';
+            ctx.shadowBlur = 14;
+            ctx.beginPath();
+            ctx.moveTo(tl.x, tl.y);
+            ctx.lineTo(tr.x, tr.y);
+            ctx.lineTo(br.x, br.y);
+            ctx.lineTo(bl.x, bl.y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#fde047';
+            ctx.font = `900 ${Math.max(9, Math.floor((tr.x - tl.x) * 0.18))}px 'Orbitron', sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText('⚡ 2X SURGE ⚡', (tl.x + tr.x) / 2, (tl.y + bl.y) / 2);
+            ctx.restore();
+        }
+
+        function drawStumpsAtZ(z, color, sx, sy) {
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = z === 0 ? 3.5 : 2;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 10;
+            [-0.42, 0, 0.42].forEach(xOffset => {
+                const bot = project3D(xOffset, 0, z, sx, sy);
+                const top = project3D(xOffset, 1.45, z, sx, sy);
+                ctx.beginPath();
+                ctx.moveTo(bot.x, bot.y);
+                ctx.lineTo(top.x, top.y);
+                ctx.stroke();
+            });
+            // Glowing Bail across top
+            const bL = project3D(-0.44, 1.45, z, sx, sy);
+            const bR = project3D(0.44, 1.45, z, sx, sy);
+            ctx.beginPath();
+            ctx.moveTo(bL.x, bL.y);
+            ctx.lineTo(bR.x, bR.y);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawPlayerAvatar3D(wx, wz, color, isBatter, sx, sy) {
+            const foot = project3D(wx, 0, wz, sx, sy);
+            const head = project3D(wx, 2.3, wz, sx, sy);
+            const r = Math.max(4, head.scale * 0.25);
+
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = '#091024';
+            ctx.lineWidth = 2.5;
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 8;
+
+            // Torso capsule
+            ctx.beginPath();
+            ctx.moveTo(foot.x, foot.y);
+            ctx.lineTo(head.x, head.y + r);
+            ctx.stroke();
+
+            // Helmet
+            ctx.beginPath();
+            ctx.arc(head.x, head.y, r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawBatterWithPlasmaBat(wx, wz, jerseyColor, batColor, sx, sy) {
+            drawPlayerAvatar3D(wx, wz, jerseyColor, true, sx, sy);
+            const hands = project3D(wx + 0.55, 1.25, wz, sx, sy);
+
+            ctx.save();
+            ctx.translate(hands.x, hands.y);
+            ctx.rotate(-0.45 - batSwingAngle * 1.4);
+
+            ctx.strokeStyle = batColor;
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.shadowColor = batColor;
+            ctx.shadowBlur = 16;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(22, 26);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function spawnParticles3D(x, y, z, color, count = 18) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x, y, z,
+                    vx: (Math.random() - 0.5) * 9,
+                    vy: Math.random() * 7 + 1,
+                    vz: (Math.random() - 0.5) * 9,
+                    size: Math.random() * 3 + 1.5,
+                    color,
+                    alpha: 1.0
+                });
+            }
+        }
+
+        function spawnBannerPopup(x, y, z, text, color) {
+            bannerPopups.push({ x, y, z, text, color, alpha: 1.0 });
+        }
+
+        function setDeliveryBanner(text) {
+            document.getElementById('deliveryBanner').textContent = text;
+        }
+
+        // --- UI, LOBBY, RIBBON & MODALS ---
+        function formatOvers(balls) {
+            return `${Math.floor(balls / 6)}.${balls % 6}`;
+        }
+
+        function updateHudUI() {
+            const team = getPlayerTeam();
+            document.getElementById('hudTeamDot').style.backgroundColor = team.color;
+            document.getElementById('hudTeamName').textContent = team.short;
+
+            const isBatting = match.innings === 1;
+            const runs = isBatting ? match.playerRuns : match.aiRuns;
+            const wkts = isBatting ? match.playerWickets : match.aiWickets;
+            const balls = isBatting ? match.playerBalls : match.aiBalls;
+
+            document.getElementById('hudInningsBadge').textContent = isBatting ? 'BATTING' : 'BOWLING';
+            document.getElementById('hudScoreText').textContent = `${runs}/${wkts}`;
+            document.getElementById('hudOversText').textContent = `(${formatOvers(balls)} / ${formatOvers(match.maxBalls)})`;
+
+            const targetEl = document.getElementById('hudTargetLine');
+            if (match.targetRuns !== null) {
+                const need = Math.max(0, match.targetRuns - runs);
+                const remBalls = Math.max(0, match.maxBalls - balls);
+                targetEl.textContent = `NEED ${need} OFF ${remBalls} BALLS`;
+            } else {
+                targetEl.textContent = `1ST INNINGS // 2X SURGE ACTIVE`;
+            }
+
+            // Over dots
+            const dotsEl = document.getElementById('thisOverDots');
+            dotsEl.innerHTML = '';
+            match.thisOverLog.forEach(b => {
+                const span = document.createElement('span');
+                const isW = b === 'W';
+                const isBoundary = Number(b) >= 4;
+                span.className = `px-1.5 py-0.2 rounded font-orbitron text-[9px] font-bold ${
+                    isW ? 'bg-rose-600 text-white' : (isBoundary ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-200')
+                }`;
+                span.textContent = b;
+                dotsEl.appendChild(span);
+            });
+
+            // Surge Meter
+            document.getElementById('hudSurgePct').textContent = `${Math.floor(match.surgeMeter)}%`;
+            document.getElementById('hudSurgeBar').style.width = `${match.surgeMeter}%`;
+            const surgeBtn = document.getElementById('btnShotSurge');
+            const surgeReady = match.surgeMeter >= 100;
+            surgeBtn.disabled = !surgeReady;
+            surgeBtn.classList.toggle('opacity-45', !surgeReady);
+            surgeBtn.classList.toggle('animate-pulse', surgeReady);
+            document.getElementById('surgeBtnSub').textContent = surgeReady ? 'READY! [K]' : `Charge ${Math.floor(match.surgeMeter)}%`;
+        }
+
+        function updateAllEconomyUI() {
+            document.getElementById('lobbyCoins').textContent = profile.coins.toLocaleString();
+            document.getElementById('hudCoins').textContent = profile.coins.toLocaleString();
+            document.getElementById('shopCoins').textContent = profile.coins.toLocaleString();
+            document.getElementById('lobbyWins').textContent = profile.wins;
+            document.getElementById('lobbyBest').textContent = profile.highScore;
+            document.getElementById('lobbySixes').textContent = profile.sixes;
+            document.getElementById('lobbyWickets').textContent = profile.wickets;
+
+            const today = new Date().toISOString().slice(0, 10);
+            const claimed = profile.lastDaily === today;
+            const dailyBtn = document.getElementById('btnDailyBonus');
+            if (dailyBtn) {
+                dailyBtn.disabled = claimed;
+                dailyBtn.style.opacity = claimed ? '0.5' : '1';
+                document.getElementById('dailyBonusSub').textContent = claimed ? 'CLAIMED' : 'DAILY BONUS';
+            }
+
+            const turf = getActiveTurf();
+            document.getElementById('ribbonThemeShort').textContent = turf.short;
+        }
+
+        function renderLobbyTeamGrid() {
+            const container = document.getElementById('teamSelectorGrid');
+            container.innerHTML = '';
+            TEAMS.forEach(t => {
+                const selected = profile.teamId === t.id;
+                const btn = document.createElement('button');
+                btn.className = `p-2 rounded-xl border text-left transition-all ${
+                    selected ? 'border-2 border-emerald-400 bg-emerald-950/40' : 'border-slate-700 bg-slate-900/60'
+                }`;
+                btn.innerHTML = `
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full" style="background:${t.color}"></span>
+                        <span class="font-orbitron text-[10px] font-black text-white truncate">${t.short}</span>
+                    </div>
+                    <div class="text-[9px] text-slate-300 truncate mt-0.5">${t.name}</div>
+                `;
+                btn.addEventListener('click', () => {
+                    audio.init();
+                    audio.playBounce();
+                    profile.teamId = t.id;
+                    saveProfile();
+                    renderLobbyTeamGrid();
+                });
+                container.appendChild(btn);
+            });
+        }
+
+        function openHomeLobby() {
+            isLobbyOpen = true;
+            setRibbonOpen(false);
+            document.getElementById('homeLobby').classList.remove('hidden');
+            document.getElementById('homeLobby').classList.add('flex');
+
+            const resumeBtn = document.getElementById('btnResumeLobby');
+            if (hasActiveMatch) {
+                resumeBtn.classList.remove('hidden');
+                resumeBtn.classList.add('flex');
+            } else {
+                resumeBtn.classList.add('hidden');
+                resumeBtn.classList.remove('flex');
+            }
+            updateAllEconomyUI();
+            renderLobbyTeamGrid();
+        }
+
+        function closeLobbyAndPlay(startFresh = false) {
+            audio.init();
+            isLobbyOpen = false;
+            document.getElementById('homeLobby').classList.add('hidden');
+            document.getElementById('homeLobby').classList.remove('flex');
+            if (startFresh || !hasActiveMatch) {
+                startNewMatch();
+            } else {
+                resetForNextDelivery();
+            }
+        }
+
+        function showResultModal(emoji, title, subText, btnLabel, callback) {
+            document.getElementById('resultEmoji').textContent = emoji;
+            document.getElementById('resultTitle').textContent = title;
+            document.getElementById('resultSub').textContent = subText;
+            const btn = document.getElementById('btnResultAction');
+            btn.textContent = btnLabel;
+            btn.onclick = callback;
+            document.getElementById('resultModal').classList.remove('hidden');
+            document.getElementById('resultModal').classList.add('flex');
+        }
+
+        function closeResultModal() {
+            document.getElementById('resultModal').classList.add('hidden');
+            document.getElementById('resultModal').classList.remove('flex');
+        }
+
+        function renderShopModal() {
+            updateAllEconomyUI();
+            const batContainer = document.getElementById('batShopList');
+            const turfContainer = document.getElementById('turfShopList');
+            batContainer.innerHTML = '';
+            turfContainer.innerHTML = '';
+
+            PLASMA_BATS.forEach(b => {
+                const unlocked = profile.unlockedBats.includes(b.id);
+                const active = profile.activeBat === b.id;
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900/90 p-2.5 rounded-xl border border-slate-700 flex flex-col justify-between';
+                card.innerHTML = `
+                    <div>
+                        <div class="font-orbitron text-xs font-bold text-white">${b.name}</div>
+                        <div class="text-[10px] text-slate-400 mb-2">${b.desc}</div>
+                    </div>
+                    <button class="w-full py-1.5 rounded-lg font-orbitron text-[10px] font-bold ${active ? 'bg-emerald-600/40 text-emerald-300 border border-emerald-400' : 'cyber-btn text-white'}">
+                        ${active ? '✓ EQUIPPED' : (unlocked ? 'EQUIP' : `UNLOCK 🪙 ${b.cost}`)}
+                    </button>
+                `;
+                card.querySelector('button').addEventListener('click', () => {
+                    if (unlocked) {
+                        profile.activeBat = b.id;
+                        saveProfile();
+                        renderShopModal();
+                    } else if (profile.coins >= b.cost) {
+                        profile.coins -= b.cost;
+                        profile.unlockedBats.push(b.id);
+                        profile.activeBat = b.id;
+                        audio.playCrowdHorn();
+                        saveProfile();
+                        renderShopModal();
+                    }
+                });
+                batContainer.appendChild(card);
+            });
+
+            TURF_THEMES.forEach(t => {
+                const unlocked = profile.unlockedTurfs.includes(t.id);
+                const active = profile.activeTurf === t.id;
+                const card = document.createElement('div');
+                card.className = 'bg-slate-900/90 p-2.5 rounded-xl border border-slate-700 flex flex-col justify-between';
+                card.innerHTML = `
+                    <div>
+                        <div class="font-orbitron text-xs font-bold text-white">${t.name}</div>
+                        <div class="text-[10px] text-slate-400 mb-2">Box Arena Lighting</div>
+                    </div>
+                    <button class="w-full py-1.5 rounded-lg font-orbitron text-[10px] font-bold ${active ? 'bg-emerald-600/40 text-emerald-300 border border-emerald-400' : 'cyber-btn text-white'}">
+                        ${active ? '✓ ACTIVE' : (unlocked ? 'ACTIVATE' : `UNLOCK 🪙 ${t.cost}`)}
+                    </button>
+                `;
+                card.querySelector('button').addEventListener('click', () => {
+                    if (unlocked) {
+                        profile.activeTurf = t.id;
+                        saveProfile();
+                        renderShopModal();
+                    } else if (profile.coins >= t.cost) {
+                        profile.coins -= t.cost;
+                        profile.unlockedTurfs.push(t.id);
+                        profile.activeTurf = t.id;
+                        audio.playCrowdHorn();
+                        saveProfile();
+                        renderShopModal();
+                    }
+                });
+                turfContainer.appendChild(card);
+            });
+        }
+
+        function openScorecardModal() {
+            setRibbonOpen(false);
+            const team = getPlayerTeam();
+            document.getElementById('scorecardSummary').innerHTML = `
+                <div class="flex justify-between text-emerald-300"><span>${team.name} (YOU):</span> <span>${match.playerRuns}/${match.playerWickets} (${formatOvers(match.playerBalls)} ov)</span></div>
+                <div class="flex justify-between text-cyan-300"><span>OPPONENT SQUAD:</span> <span>${match.aiRuns}/${match.aiWickets} (${formatOvers(match.aiBalls)} ov)</span></div>
+                <div class="flex justify-between text-amber-300"><span>CAREER HIGH SCORE:</span> <span>${profile.highScore} RUNS</span></div>
+            `;
+            document.getElementById('scorecardModal').classList.remove('hidden');
+            document.getElementById('scorecardModal').classList.add('flex');
+        }
+
+        // --- LEFT-TOP DRAG-TO-PULL RIBBON DRAWER PHYSICS ---
+        const leftRibbonDrawer = document.getElementById('leftRibbonDrawer');
+        const ribbonTray = document.getElementById('ribbonTray');
+        const ribbonPullTab = document.getElementById('ribbonPullTab');
+        const ribbonTabText = document.getElementById('ribbonTabText');
+        const ribbonBackdrop = document.getElementById('ribbonBackdrop');
+
+        let ribbonOpen = false;
+        let isDraggingRibbon = false;
+        let dragMoved = false;
+        let dragStartX = 0;
+        let dragStartTranslate = 0;
+        let currentDragTranslate = 0;
+
+        function getClosedOffset() {
+            return -(ribbonTray ? ribbonTray.offsetWidth : 310);
+        }
+
+        function setRibbonOpen(state) {
+            ribbonOpen = Boolean(state);
+            leftRibbonDrawer.classList.remove('dragging');
+            leftRibbonDrawer.style.transform = '';
+            leftRibbonDrawer.classList.toggle('open', ribbonOpen);
+            ribbonBackdrop.classList.toggle('active', ribbonOpen);
+            ribbonTabText.textContent = ribbonOpen ? 'HIDE' : 'PULL';
+        }
+
+        ribbonPullTab.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            audio.init();
+            isDraggingRibbon = true;
+            dragMoved = false;
+            dragStartX = e.clientX;
+            const closedOffset = getClosedOffset();
+            dragStartTranslate = ribbonOpen ? 0 : closedOffset;
+            currentDragTranslate = dragStartTranslate;
+            leftRibbonDrawer.classList.add('dragging');
+            if (ribbonPullTab.setPointerCapture) {
+                try { ribbonPullTab.setPointerCapture(e.pointerId); } catch (err) {}
+            }
+        });
+
+        ribbonPullTab.addEventListener('pointermove', (e) => {
+            if (!isDraggingRibbon) return;
+            const dx = e.clientX - dragStartX;
+            if (Math.abs(dx) > 5) dragMoved = true;
+            const closedOffset = getClosedOffset();
+            currentDragTranslate = Math.max(closedOffset, Math.min(0, dragStartTranslate + dx));
+            leftRibbonDrawer.style.transform = `translateX(${currentDragTranslate}px)`;
+        });
+
+        function finishRibbonDrag() {
+            if (!isDraggingRibbon) return;
+            isDraggingRibbon = false;
+            if (!dragMoved) {
+                audio.playBounce();
+                setRibbonOpen(!ribbonOpen);
+                return;
+            }
+            const closedOffset = getClosedOffset();
+            const threshold = ribbonOpen ? closedOffset * 0.28 : closedOffset * 0.68;
+            setRibbonOpen(currentDragTranslate > threshold);
+        }
+        ribbonPullTab.addEventListener('pointerup', finishRibbonDrag);
+        ribbonPullTab.addEventListener('pointercancel', finishRibbonDrag);
+        ribbonBackdrop.addEventListener('pointerdown', () => setRibbonOpen(false));
+
+        // --- INPUT & EVENT LISTENERS ---
+        document.querySelectorAll('.format-card').forEach(btn => {
+            btn.addEventListener('click', () => {
+                audio.init();
+                audio.playBounce();
+                profile.format = btn.getAttribute('data-format');
+                saveProfile();
+                document.querySelectorAll('.format-card').forEach(b => {
+                    const active = b.getAttribute('data-format') === profile.format;
+                    b.className = active
+                        ? 'format-card text-left p-2 rounded-xl border-2 border-emerald-400 bg-emerald-950/35 transition-all'
+                        : 'format-card text-left p-2 rounded-xl border border-slate-700 bg-slate-900/60 transition-all';
+                });
+            });
+        });
+
+        document.querySelectorAll('.aim-dir-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                match.aimDir = Number(btn.getAttribute('data-dir'));
+                document.querySelectorAll('.aim-dir-btn').forEach(b => {
+                    b.classList.toggle('ring-2', Number(b.getAttribute('data-dir')) === match.aimDir);
+                    b.classList.toggle('ring-emerald-400', Number(b.getAttribute('data-dir')) === match.aimDir);
+                });
+            });
+        });
+
+        document.querySelectorAll('.bowl-type-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                match.selectedBowlType = btn.getAttribute('data-bowl');
+                document.querySelectorAll('.bowl-type-btn').forEach(b => {
+                    b.classList.toggle('ring-2', b.getAttribute('data-bowl') === match.selectedBowlType);
+                    b.classList.toggle('ring-amber-400', b.getAttribute('data-bowl') === match.selectedBowlType);
+                });
+            });
+        });
+
+        document.getElementById('btnShotGround').addEventListener('click', () => triggerPlayerBatSwing('GROUND'));
+        document.getElementById('btnShotLoft').addEventListener('click', () => triggerPlayerBatSwing('LOFT'));
+        document.getElementById('btnShotSurge').addEventListener('click', () => triggerPlayerBatSwing('SURGE'));
+        document.getElementById('btnBowlRelease').addEventListener('click', triggerPlayerBowlRelease);
+
+        // Quick-Sim Bowling Innings Button
+        document.getElementById('btnQuickSimInnings').addEventListener('click', () => {
+            if (match.innings !== 2) return;
+            const remBalls = match.maxBalls - match.aiBalls;
+            for (let i = 0; i < remBalls; i++) {
+                if (Math.random() < 0.22) match.aiWickets++;
+                else match.aiRuns += [0, 1, 1, 2, 4, 6][Math.floor(Math.random() * 6)];
+                match.aiBalls++;
+                if (match.aiWickets >= match.maxWickets || match.aiRuns >= match.targetRuns) break;
+            }
+            updateHudUI();
+            checkInningsOrMatchEnd();
+        });
+
+        // Canvas Tap / Swipe to Aim Pitch Bounce Marker or Swing Bat
+        canvas.addEventListener('pointerdown', (e) => {
+            if (isLobbyOpen) return;
+            audio.init();
+            if (match.innings === 2 && delivery.phase === 'IDLE') {
+                // Position bounce marker based on tap X/Y
+                const nx = ((e.clientX / cw) - 0.5) * 3.0;
+                delivery.bounceX = Math.max(-1.6, Math.min(1.6, nx));
+                delivery.bounceZ = Math.max(1.8, Math.min(9.5, (1 - e.clientY / ch) * 12));
+                triggerPlayerBowlRelease();
+            } else if (match.innings === 1 && delivery.phase === 'BOWLED') {
+                if (e.clientX < cw * 0.35) match.aimDir = -1;
+                else if (e.clientX > cw * 0.65) match.aimDir = 1;
+                else match.aimDir = 0;
+                triggerPlayerBatSwing('LOFT');
+            }
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (isLobbyOpen) return;
+            if (e.code === 'KeyA' || e.code === 'ArrowLeft') match.aimDir = -1;
+            if (e.code === 'KeyS' || e.code === 'ArrowUp') match.aimDir = 0;
+            if (e.code === 'KeyD' || e.code === 'ArrowRight') match.aimDir = 1;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (match.innings === 1) triggerPlayerBatSwing('LOFT');
+                else triggerPlayerBowlRelease();
+            }
+            if (e.code === 'KeyJ') triggerPlayerBatSwing('GROUND');
+            if (e.code === 'KeyK' && match.surgeMeter >= 100) triggerPlayerBatSwing('SURGE');
+        });
+
+        // Lobby & Ribbon Navigation
+        document.getElementById('btnEnterArena').addEventListener('click', () => closeLobbyAndPlay(true));
+        document.getElementById('btnResumeLobby').addEventListener('click', () => closeLobbyAndPlay(false));
+        document.getElementById('btnRibbonHome').addEventListener('click', openHomeLobby);
+        document.getElementById('btnResultHome').addEventListener('click', () => {
+            closeResultModal();
+            openHomeLobby();
+        });
+
+        document.getElementById('btnDailyBonus').addEventListener('click', () => {
+            audio.init();
+            const today = new Date().toISOString().slice(0, 10);
+            if (profile.lastDaily === today) return;
+            profile.lastDaily = today;
+            profile.coins += 150;
+            audio.playCrowdHorn();
+            saveProfile();
+        });
+
+        document.getElementById('btnLobbyShop').addEventListener('click', () => {
+            renderShopModal();
+            document.getElementById('shopModal').classList.remove('hidden');
+            document.getElementById('shopModal').classList.add('flex');
+        });
+        document.getElementById('btnRibbonShop').addEventListener('click', () => {
+            setRibbonOpen(false);
+            renderShopModal();
+            document.getElementById('shopModal').classList.remove('hidden');
+            document.getElementById('shopModal').classList.add('flex');
+        });
+        document.getElementById('btnHudCoins').addEventListener('click', () => {
+            renderShopModal();
+            document.getElementById('shopModal').classList.remove('hidden');
+            document.getElementById('shopModal').classList.add('flex');
+        });
+        document.getElementById('btnCloseShop').addEventListener('click', () => {
+            document.getElementById('shopModal').classList.add('hidden');
+            document.getElementById('shopModal').classList.remove('flex');
+        });
+
+        document.getElementById('btnLobbyScorecard').addEventListener('click', openScorecardModal);
+        document.getElementById('btnRibbonScorecard').addEventListener('click', openScorecardModal);
+        document.getElementById('btnCloseScorecard').addEventListener('click', () => {
+            document.getElementById('scorecardModal').classList.add('hidden');
+            document.getElementById('scorecardModal').classList.remove('flex');
+        });
+
+        document.getElementById('btnRibbonAudio').addEventListener('click', () => {
+            audio.init();
+            const muted = audio.toggleMute();
+            document.getElementById('ribbonAudioIcon').textContent = muted ? '🔇' : '🔊';
+            document.getElementById('ribbonAudioLabel').textContent = muted ? 'MUTED' : 'SOUND';
+        });
+
+        document.getElementById('btnRibbonRestart').addEventListener('click', () => {
+            setRibbonOpen(false);
+            closeLobbyAndPlay(true);
+        });
+
+        document.getElementById('btnRibbonTheme').addEventListener('click', () => {
+            const idx = TURF_THEMES.findIndex(t => t.id === profile.activeTurf);
+            profile.activeTurf = TURF_THEMES[(idx + 1) % TURF_THEMES.length].id;
+            saveProfile();
+        });
+
+        // Main Game Loop
+        let lastTime = performance.now();
+        function mainLoop(now) {
+            const dt = Math.min(0.05, (now - lastTime) / 1000);
+            lastTime = now;
+            updateGameplay(dt);
+            renderArena();
+            requestAnimationFrame(mainLoop);
+        }
+
+        window.onload = function () {
+            initFielders();
+            openHomeLobby();
+            requestAnimationFrame(mainLoop);
+        };
+    </script>
+</body>
+</html>

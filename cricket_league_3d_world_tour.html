@@ -1,0 +1,2101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CRICKET LEAGUE 3D: WORLD TOUR CLASH | NovaForge Studios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0b192c;
+            font-family: 'Rajdhani', sans-serif;
+            color: #ffffff;
+            touch-action: none;
+        }
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        #webglViewport {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Broadcast Glass Panels */
+        .tv-panel {
+            background: linear-gradient(180deg, rgba(15, 29, 58, 0.92) 0%, rgba(8, 17, 36, 0.96) 100%);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(96, 165, 250, 0.45);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+        .tv-btn {
+            background: linear-gradient(180deg, #1e40af 0%, #1e3a8a 100%);
+            border: 1px solid #60a5fa;
+            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.55);
+            transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .tv-btn:hover:not(:disabled) {
+            background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.7);
+        }
+        .tv-btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+        .tv-btn-green {
+            background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+            border: 1px solid #4ade80;
+            box-shadow: 0 4px 14px rgba(22, 163, 74, 0.5);
+            transition: all 0.15s ease;
+        }
+        .tv-btn-green:hover:not(:disabled) {
+            background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+            transform: translateY(-1px);
+        }
+        .tv-btn-orange {
+            background: linear-gradient(180deg, #ea580c 0%, #c2410c 100%);
+            border: 1px solid #fb923c;
+            box-shadow: 0 4px 14px rgba(234, 88, 12, 0.55);
+            transition: all 0.15s ease;
+        }
+        .tv-btn-orange:hover:not(:disabled) {
+            background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
+            transform: translateY(-1px);
+        }
+
+        /* UPPER-LEFT DRAG-TO-PULL 2x3 RIBBON DRAWER */
+        #ribbonBackdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 18, 0.55);
+            backdrop-filter: blur(2px);
+            z-index: 75;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        #ribbonBackdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #leftRibbonDrawer {
+            position: fixed;
+            top: 8px;
+            left: 0;
+            z-index: 80;
+            display: flex;
+            align-items: stretch;
+            max-width: calc(100vw - 10px);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translateX(calc(-100% + 40px));
+            filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.85));
+            will-change: transform;
+        }
+        #leftRibbonDrawer.dragging {
+            transition: none !important;
+        }
+        #leftRibbonDrawer.open {
+            transform: translateX(0);
+        }
+        .ribbon-tray {
+            background: rgba(9, 18, 38, 0.96);
+            backdrop-filter: blur(18px);
+            border-top: 1px solid rgba(96, 165, 250, 0.65);
+            border-bottom: 1px solid rgba(96, 165, 250, 0.65);
+            padding: 8px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 6px;
+            width: min(326px, calc(100vw - 54px));
+        }
+        .ribbon-tray button {
+            width: 100%;
+            justify-content: center;
+            padding: 7px 5px;
+        }
+        .ribbon-pull-tab {
+            width: 40px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, #0284c7 0%, #0f172a 100%);
+            border: 1px solid #38bdf8;
+            border-left: none;
+            border-radius: 0 14px 14px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            cursor: grab;
+            padding: 8px 2px;
+            box-shadow: 4px 0 16px rgba(2, 132, 199, 0.45);
+            touch-action: none;
+        }
+        .ribbon-pull-tab:active {
+            cursor: grabbing;
+        }
+        .ribbon-grip-bars {
+            display: flex;
+            gap: 2px;
+            margin-bottom: 1px;
+        }
+        .ribbon-grip-bars span {
+            width: 2px;
+            height: 10px;
+            border-radius: 1px;
+            background: #7dd3fc;
+        }
+        .ribbon-chevron {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        #leftRibbonDrawer.open .ribbon-chevron {
+            transform: rotate(180deg);
+        }
+
+        /* EXACT PVP TOP-CENTER SCOREBOARD MATCHING SCREENSHOT */
+        .pvp-header-box {
+            background: linear-gradient(180deg, rgba(22, 41, 74, 0.94) 0%, rgba(12, 24, 46, 0.97) 100%);
+            border: 1.5px solid rgba(148, 163, 184, 0.45);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+        }
+        .name-ribbon {
+            background: linear-gradient(90deg, #0284c7 0%, #0369a1 100%);
+            border: 1px solid rgba(125, 211, 252, 0.65);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45);
+        }
+
+        @keyframes popCallout {
+            0% { opacity: 0; transform: scale(0.6) translateY(18px); }
+            18% { opacity: 1; transform: scale(1.08) translateY(0px); }
+            82% { opacity: 1; transform: scale(1) translateY(0px); }
+            100% { opacity: 0; transform: scale(0.88) translateY(-16px); }
+        }
+        .shot-callout-anim {
+            animation: popCallout 2.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="select-none">
+
+    <!-- 3D WebGL Stadium Container -->
+    <div id="webglViewport"></div>
+
+    <!-- Swipe Gesture Trail Canvas Overlay (For Drag/Swipe-to-Hit) -->
+    <canvas id="swipeOverlayCanvas" class="fixed inset-0 pointer-events-none z-20"></canvas>
+
+    <!-- Backdrop Dimmer for Upper-Left Pull Ribbon -->
+    <div id="ribbonBackdrop" aria-hidden="true"></div>
+
+    <!-- ========================================================================= -->
+    <!-- 1. UPPER-LEFT DRAG-TO-PULL 2x3 COMPACT RIBBON DRAWER                      -->
+    <!-- ========================================================================= -->
+    <div id="leftRibbonDrawer" aria-label="Quick Action Pull Ribbon">
+        <div class="ribbon-tray" id="ribbonTray">
+            <button id="btnRibbonHome" class="tv-btn-green rounded-xl text-[10px] sm:text-xs font-orbitron text-white font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🏠</span> <span>LOBBY</span>
+            </button>
+            <button id="btnRibbonJersey" class="tv-btn-orange rounded-xl text-[10px] sm:text-xs font-orbitron text-white font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>👕</span> <span>KIT #13</span>
+            </button>
+            <button id="btnRibbonCam" class="tv-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-sky-100 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🎥</span> <span id="ribbonCamText">CLOSE</span>
+            </button>
+            <button id="btnRibbonAudio" class="tv-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-sky-100 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span id="ribbonAudioIcon">🔊</span> <span id="ribbonAudioText">SOUND</span>
+            </button>
+            <button id="btnRibbonWagon" class="tv-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-amber-200 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>📊</span> <span>360° MAP</span>
+            </button>
+            <button id="btnRibbonRestart" class="tv-btn rounded-xl text-[10px] sm:text-xs font-orbitron text-rose-200 font-bold flex items-center gap-1 whitespace-nowrap">
+                <span>🔄</span> <span>REMATCH</span>
+            </button>
+        </div>
+
+        <button id="ribbonPullTab" class="ribbon-pull-tab" title="Drag/Pull Out or Tap to Toggle Menu">
+            <div class="ribbon-grip-bars"><span></span><span></span></div>
+            <span class="ribbon-chevron text-sky-200 text-xs font-black leading-none">❯</span>
+            <span id="ribbonTabText" class="font-orbitron text-[8px] font-bold tracking-widest text-white uppercase leading-none" style="writing-mode: vertical-rl; text-orientation: mixed;">PULL</span>
+        </button>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 2. HOME SCREEN LOBBY (#homeLobby) - Head-to-Head World Tour Matchmaking   -->
+    <!-- ========================================================================= -->
+    <div id="homeLobby" class="fixed inset-0 z-40 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/55 backdrop-blur-md overflow-y-auto">
+        <div class="tv-panel rounded-3xl p-4 sm:p-6 max-w-xl w-full border border-sky-400/55 shadow-[0_20px_60px_rgba(0,0,0,0.85)] my-auto flex flex-col gap-3.5">
+
+            <!-- Top Title Header -->
+            <div class="flex items-center justify-between gap-3 border-b border-slate-700/80 pb-3">
+                <div>
+                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/50 text-amber-300 text-[9px] sm:text-[10px] font-orbitron tracking-widest uppercase mb-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                        WORLD TOUR 3D MULTIPLAYER CLASH
+                    </div>
+                    <h1 class="font-orbitron text-2xl sm:text-3xl font-black tracking-tight text-white leading-none">
+                        CRICKET LEAGUE 3D
+                    </h1>
+                    <div class="font-orbitron text-xs sm:text-sm font-bold tracking-[0.18em] text-sky-300 mt-0.5">
+                        DAYLIGHT STADIUM EDITION
+                    </div>
+                </div>
+
+                <div class="flex flex-col items-end gap-1">
+                    <div class="px-3 py-1 rounded-full bg-slate-900 border border-amber-400/60 font-orbitron text-xs font-black text-amber-300">
+                        🪙 <span id="lobbyCoins">1,250</span>
+                    </div>
+                    <span class="text-[10px] text-emerald-300 font-bold">🏆 WINS: <b id="lobbyWins">0</b> | 🚀 MAX 6: <b id="lobbyMaxSix">0</b>m</span>
+                </div>
+            </div>
+
+            <!-- Head-to-Head Matchup Card (Sunder 🇮🇳 vs Gary 🇬🇧) -->
+            <div class="bg-slate-900/90 rounded-2xl p-3 border border-sky-500/40 flex items-center justify-between gap-2">
+                <!-- Player 1: Sunder (India) -->
+                <div class="flex items-center gap-2.5">
+                    <div class="relative">
+                        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-b from-orange-500 to-blue-700 p-0.5 shadow-lg">
+                            <svg viewBox="0 0 64 64" class="w-full h-full rounded-full bg-slate-800">
+                                <circle cx="32" cy="24" r="12" fill="#d97706"/>
+                                <path d="M14 56 C14 40, 50 40, 50 56" fill="#f97316"/>
+                                <rect x="22" y="20" width="20" height="5" rx="2" fill="#1e293b"/>
+                            </svg>
+                        </div>
+                        <span class="absolute -bottom-1 -right-1 text-sm bg-slate-900 rounded-full px-1 border border-white/40">🇮🇳</span>
+                    </div>
+                    <div>
+                        <div id="lobbyPlayerName" class="font-orbitron text-xs sm:text-sm font-black text-white">Sunder</div>
+                        <div class="text-[11px] text-orange-300 font-bold">JERSEY: <span id="lobbyJerseyTag">VIKAS #13</span></div>
+                    </div>
+                </div>
+
+                <!-- VS Target Pill -->
+                <div class="text-center px-2">
+                    <div class="font-orbitron text-xs font-black text-amber-400">VS</div>
+                    <div class="text-[10px] text-slate-300 font-bold">CHASE TARGET</div>
+                    <div id="lobbyTargetPreview" class="font-orbitron text-base sm:text-lg font-black text-emerald-400">36 RUNS</div>
+                </div>
+
+                <!-- Player 2: Gary (UK) -->
+                <div class="flex items-center gap-2.5 flex-row-reverse text-right">
+                    <div class="relative">
+                        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-b from-emerald-400 to-rose-700 p-0.5 shadow-lg">
+                            <svg viewBox="0 0 64 64" class="w-full h-full rounded-full bg-slate-800">
+                                <circle cx="32" cy="24" r="12" fill="#fcd34d"/>
+                                <path d="M14 56 C14 40, 50 40, 50 56" fill="#9f1239"/>
+                                <rect x="22" y="21" width="20" height="4" rx="1" fill="#0f172a"/>
+                            </svg>
+                        </div>
+                        <span class="absolute -bottom-1 -left-1 text-sm bg-slate-900 rounded-full px-1 border border-white/40">🇬🇧</span>
+                    </div>
+                    <div>
+                        <div class="font-orbitron text-xs sm:text-sm font-black text-white">Gary</div>
+                        <div class="text-[11px] text-rose-300 font-bold">FAST BOWLER</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tour Mode & Target Selector -->
+            <div>
+                <div class="text-[10px] font-orbitron font-bold uppercase tracking-wider text-sky-300 mb-1.5">
+                    1. SELECT WORLD TOUR CHALLENGE
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button data-mode="SCREENSHOT_36" class="tour-mode-btn p-2.5 rounded-xl border-2 border-emerald-400 bg-emerald-950/40 text-left">
+                        <div class="font-orbitron text-[10px] sm:text-xs font-black text-white">🔥 CHASE 36</div>
+                        <div class="text-[10px] text-emerald-200 mt-0.5">Start at 23 runs, need 13 more!</div>
+                    </button>
+                    <button data-mode="SUPER_OVER" class="tour-mode-btn p-2.5 rounded-xl border border-slate-700 bg-slate-900/70 text-left">
+                        <div class="font-orbitron text-[10px] sm:text-xs font-black text-amber-300">⚡ 1-OV CLASH</div>
+                        <div class="text-[10px] text-slate-300 mt-0.5">6 Balls vs Gary (Target 20)</div>
+                    </button>
+                    <button data-mode="FULL_MATCH" class="tour-mode-btn p-2.5 rounded-xl border border-slate-700 bg-slate-900/70 text-left">
+                        <div class="font-orbitron text-[10px] sm:text-xs font-black text-sky-300">🏆 2-OV TOUR</div>
+                        <div class="text-[10px] text-slate-300 mt-0.5">Bat + Bowl Full Match</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Customize Jersey Back Name & Number (Default: VIKAS #13) -->
+            <div class="bg-slate-900/80 p-3 rounded-2xl border border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
+                <div>
+                    <label class="text-[9px] font-orbitron text-slate-400 uppercase block">PLAYER HANDLE</label>
+                    <input id="inpPlayerHandle" type="text" maxlength="10" value="Sunder" class="w-full mt-0.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-sky-500/50 font-orbitron text-xs text-white">
+                </div>
+                <div>
+                    <label class="text-[9px] font-orbitron text-slate-400 uppercase block">3D SHIRT BACK NAME</label>
+                    <input id="inpShirtName" type="text" maxlength="9" value="VIKAS" class="w-full mt-0.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-orange-500/50 font-orbitron text-xs text-orange-300 uppercase">
+                </div>
+                <div>
+                    <label class="text-[9px] font-orbitron text-slate-400 uppercase block">3D SHIRT NUMBER</label>
+                    <input id="inpShirtNum" type="number" min="1" max="99" value="13" class="w-full mt-0.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-orange-500/50 font-orbitron text-xs text-amber-300">
+                </div>
+            </div>
+
+            <!-- Primary Action Buttons -->
+            <div class="flex flex-col gap-2">
+                <button id="btnResumeMatch" class="hidden tv-btn w-full py-2.5 rounded-2xl font-orbitron text-xs sm:text-sm font-black text-white items-center justify-center gap-2">
+                    <span>▶</span> <span>RESUME ACTIVE MATCH</span>
+                </button>
+                <button id="btnStartTourMatch" class="tv-btn-green w-full py-3.5 rounded-2xl font-orbitron text-sm sm:text-base font-black text-white flex items-center justify-center gap-2 shadow-xl">
+                    <span>🏏</span> <span>PLAY WORLD TOUR CLASH</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 3. EXACT SCREENSHOT TOP-CENTER PVP SCOREBOARD & IN-GAME HUD               -->
+    <!-- ========================================================================= -->
+    <div id="gameHud" class="fixed inset-0 z-10 pointer-events-none flex flex-col justify-between p-2 sm:p-3">
+
+        <!-- TOP ROW: Exact Screenshot Head-to-Head Scoreboard Pill -->
+        <div class="w-full flex justify-center items-start pt-0.5 pointer-events-auto">
+            <div class="flex items-center gap-0">
+
+                <!-- Left Avatar: Sunder (India) -->
+                <div class="flex flex-col items-center z-10 -mr-3">
+                    <div id="avatarRingLeft" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full p-0.5 bg-white shadow-lg relative">
+                        <svg viewBox="0 0 64 64" class="w-full h-full rounded-full bg-slate-200">
+                            <circle cx="32" cy="24" r="12" fill="#b45309"/>
+                            <path d="M14 56 C14 40, 50 40, 50 56" fill="#ea580c"/>
+                            <rect x="21" y="19" width="22" height="5" rx="2" fill="#0f172a"/>
+                        </svg>
+                        <span class="absolute bottom-0 right-0 text-[11px] bg-white text-black rounded-sm px-0.5 leading-none shadow">🇮🇳</span>
+                    </div>
+                    <div id="hudLeftName" class="name-ribbon px-3 py-0.5 rounded-md font-bold text-[11px] sm:text-xs text-white -mt-1.5 tracking-wide">
+                        Sunder
+                    </div>
+                </div>
+
+                <!-- Center Split Score Box: TOTAL RUNS | TARGET -->
+                <div class="pvp-header-box rounded-xl px-5 sm:px-7 py-1.5 flex items-center gap-4 sm:gap-6">
+                    <div class="text-center min-w-[68px]">
+                        <div class="text-[9px] sm:text-[10px] font-bold text-sky-200 tracking-wider uppercase">TOTAL RUNS</div>
+                        <div id="hudTotalRuns" class="font-orbitron text-xl sm:text-3xl font-black text-white leading-tight">23</div>
+                    </div>
+
+                    <div class="h-8 w-px bg-slate-500/60"></div>
+
+                    <div class="text-center min-w-[68px]">
+                        <div class="text-[9px] sm:text-[10px] font-bold text-sky-200 tracking-wider uppercase">TARGET</div>
+                        <div id="hudTargetRuns" class="font-orbitron text-xl sm:text-3xl font-black text-white leading-tight">36</div>
+                    </div>
+                </div>
+
+                <!-- Right Avatar: Gary (UK) with Green Active Ring -->
+                <div class="flex flex-col items-center z-10 -ml-3">
+                    <div id="avatarRingRight" class="w-12 h-12 sm:w-14 sm:h-14 rounded-full p-1 bg-emerald-400 shadow-[0_0_15px_#34d399] relative">
+                        <svg viewBox="0 0 64 64" class="w-full h-full rounded-full bg-slate-100">
+                            <circle cx="32" cy="24" r="12" fill="#f59e0b"/>
+                            <path d="M14 56 C14 40, 50 40, 50 56" fill="#9f1239"/>
+                            <rect x="21" y="20" width="22" height="4" rx="1.5" fill="#1e293b"/>
+                        </svg>
+                        <span class="absolute bottom-0 left-0 text-[11px] bg-white text-black rounded-sm px-0.5 leading-none shadow">🇬🇧</span>
+                    </div>
+                    <div id="hudRightName" class="name-ribbon px-3.5 py-0.5 rounded-md font-bold text-[11px] sm:text-xs text-white -mt-1.5 tracking-wide">
+                        Gary
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Secondary Sub-Bar: Balls Remaining, Over Pills & Speed Gun -->
+        <div class="w-full max-w-md mx-auto flex items-center justify-between px-3 py-1 rounded-full bg-slate-950/75 border border-slate-700/80 text-[11px] pointer-events-auto">
+            <span id="hudNeedEquation" class="font-orbitron font-bold text-amber-300">NEED 13 RUNS IN 8 BALLS</span>
+            <div id="hudOverTimeline" class="flex items-center gap-1"></div>
+            <span id="hudDeliverySpeed" class="font-orbitron font-bold text-sky-300">144.8 KPH</span>
+        </div>
+
+        <!-- CENTER: Shot Callout & Live Timing Meter Bar -->
+        <div class="w-full flex flex-col items-center justify-center my-auto pointer-events-none px-2">
+            <div id="shotCalloutBox" class="h-14 flex items-center justify-center"></div>
+
+            <!-- Visual Timing Window Bar when Ball is Approaching -->
+            <div id="timingMeterWrap" class="w-60 sm:w-72 bg-slate-950/85 p-1.5 rounded-full border border-white/30 shadow-xl hidden flex-col gap-0.5">
+                <div class="w-full h-3 rounded-full overflow-hidden flex relative bg-slate-900">
+                    <div class="w-[35%] h-full bg-rose-500/70"></div>
+                    <div class="w-[22%] h-full bg-amber-400/80"></div>
+                    <div class="w-[18%] h-full bg-emerald-400 shadow-[0_0_12px_#4ade80]"></div>
+                    <div class="w-[15%] h-full bg-amber-400/80"></div>
+                    <div class="w-[10%] h-full bg-rose-500/70"></div>
+                    <div id="timingMarker" class="w-2 h-full bg-white shadow-[0_0_8px_#fff] absolute top-0 left-0"></div>
+                </div>
+                <div class="flex justify-between px-2 font-orbitron text-[8px] font-bold text-slate-300">
+                    <span>EARLY</span>
+                    <span class="text-emerald-300">★ PERFECT SWEET-SPOT ★</span>
+                    <span>LATE</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM: Swipe-to-Hit Hint + 360° Direction & Shot Buttons -->
+        <div class="w-full max-w-xl mx-auto pointer-events-auto flex flex-col gap-1.5">
+
+            <!-- Batting Controls -->
+            <div id="battingControls" class="tv-panel rounded-2xl p-2 sm:p-2.5 flex flex-col gap-1.5">
+                <div class="flex items-center justify-between gap-1">
+                    <span class="text-[10px] font-orbitron font-bold text-sky-300">
+                        👆 SWIPE IN ANY DIRECTION TO SWING OR TAP SHOT:
+                    </span>
+                    <span id="hudSixDistBadge" class="font-orbitron text-[10px] font-bold text-amber-300">LAST HIT: -- M</span>
+                </div>
+
+                <!-- 5 Direction Sectors -->
+                <div class="grid grid-cols-5 gap-1">
+                    <button data-aim="-0.88" class="aim-btn tv-btn py-1 rounded-lg font-orbitron text-[9px] font-bold text-sky-100">↖ OFF CUT</button>
+                    <button data-aim="-0.44" class="aim-btn tv-btn py-1 rounded-lg font-orbitron text-[9px] font-bold text-sky-100">↖ COVER</button>
+                    <button data-aim="0" class="aim-btn tv-btn py-1 rounded-lg font-orbitron text-[9px] font-bold text-white ring-2 ring-amber-400">⬆ STRAIGHT</button>
+                    <button data-aim="0.44" class="aim-btn tv-btn py-1 rounded-lg font-orbitron text-[9px] font-bold text-sky-100">↗ MID-WKT</button>
+                    <button data-aim="0.88" class="aim-btn tv-btn py-1 rounded-lg font-orbitron text-[9px] font-bold text-sky-100">↗ LEG PULL</button>
+                </div>
+
+                <!-- Ground Drive vs Lofted Six Buttons -->
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="btnGroundStroke" class="tv-btn py-2.5 rounded-xl font-orbitron text-xs sm:text-sm font-black text-white flex items-center justify-center gap-2">
+                        <span>🏏</span> <span>CLASSIC DRIVE [J]</span>
+                    </button>
+                    <button id="btnLoftStroke" class="tv-btn-orange py-2.5 rounded-xl font-orbitron text-xs sm:text-sm font-black text-white flex items-center justify-center gap-2 shadow-lg">
+                        <span>🚀</span> <span>LOFTED SIX [SPACE]</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bowling Controls (When Bowling in 2-Over Tour Mode) -->
+            <div id="bowlingControls" class="hidden tv-panel rounded-2xl p-2.5 flex-col gap-2">
+                <div class="flex justify-between items-center">
+                    <span class="font-orbitron text-xs font-bold text-amber-300">🎯 TAP PITCH TO PLACE BOUNCE &amp; BOWL:</span>
+                    <button id="btnQuickSimBowl" class="px-2.5 py-1 rounded-lg bg-slate-800 border border-amber-400/60 font-orbitron text-[10px] font-bold text-amber-300">
+                        ⚡ QUICK-SIM BOWLING
+                    </button>
+                </div>
+                <div class="grid grid-cols-4 gap-1.5">
+                    <button data-btype="OUTSWING" class="btype-btn tv-btn py-1.5 rounded-xl font-orbitron text-[10px] font-bold text-white ring-2 ring-amber-400">⚡ SWING</button>
+                    <button data-btype="YORKER" class="btype-btn tv-btn py-1.5 rounded-xl font-orbitron text-[10px] font-bold text-white">🎯 YORKER</button>
+                    <button data-btype="BOUNCER" class="btype-btn tv-btn py-1.5 rounded-xl font-orbitron text-[10px] font-bold text-white">💥 BOUNCER</button>
+                    <button data-btype="SPIN" class="btype-btn tv-btn py-1.5 rounded-xl font-orbitron text-[10px] font-bold text-white">🌀 LEG-SPIN</button>
+                </div>
+                <button id="btnDeliverBall" class="tv-btn-green w-full py-2.5 rounded-xl font-orbitron text-xs sm:text-sm font-black text-white">
+                    ⚾ BOWL DELIVERY [SPACE]
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 4. 360° WAGON WHEEL MODAL (#wagonModal)                                   -->
+    <!-- ========================================================================= -->
+    <div id="wagonModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="tv-panel rounded-3xl p-5 max-w-md w-full text-center border border-sky-400/50">
+            <div class="flex justify-between items-center pb-2 border-b border-slate-700 mb-3">
+                <h2 class="font-orbitron text-base sm:text-lg font-black text-white">📊 360° STADIUM WAGON WHEEL</h2>
+                <button id="btnCloseWagon" class="tv-btn px-3 py-1 rounded-lg text-xs font-orbitron">✕</button>
+            </div>
+            <canvas id="wagonCanvas" width="210" height="210" class="mx-auto rounded-full border-2 border-sky-400/50"></canvas>
+            <div class="flex justify-center gap-4 mt-3 text-xs font-orbitron">
+                <span class="text-amber-300">● 6 RUNS</span>
+                <span class="text-emerald-300">● 4 RUNS</span>
+                <span class="text-sky-300">● 1-2 RUNS</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- 5. MATCH RESULT MODAL (#resultModal)                                      -->
+    <!-- ========================================================================= -->
+    <div id="resultModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="tv-panel rounded-3xl p-6 max-w-md w-full text-center border border-amber-400/60">
+            <div id="resEmoji" class="text-5xl mb-2">🏆</div>
+            <h2 id="resTitle" class="font-orbitron text-2xl font-black text-amber-300 mb-1">VICTORY!</h2>
+            <p id="resDesc" class="text-xs sm:text-sm text-slate-200 mb-5"></p>
+            <div class="flex gap-2.5">
+                <button id="btnResLobby" class="tv-btn flex-1 py-3 rounded-xl font-orbitron text-xs font-bold text-white">
+                    🏠 LOBBY
+                </button>
+                <button id="btnResNext" class="tv-btn-green flex-1 py-3 rounded-xl font-orbitron text-xs font-bold text-white">
+                    ▶ PLAY AGAIN
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /*******************************************************************************
+         * CRICKET LEAGUE 3D: WORLD TOUR CLASH | NovaForge Studios
+         * Built to match the exact Daylight Over-the-Shoulder Screenshot:
+         * - VIKAS #13 Orange & Blue Jersey with Real-Time Ground Shadows
+         * - Blue-and-White Striped Stumps & White Ball Air-Stream Trails
+         * - Sunder 🇮🇳 (23) vs Gary 🇬🇧 (Target 36) Broadcast HUD
+         *******************************************************************************/
+
+        const SAVE_KEY = 'NOVAFORGE_CRICKET_LEAGUE_3D_V2';
+
+        let profile = loadSave();
+
+        function loadSave() {
+            const def = {
+                coins: 1250,
+                wins: 0,
+                maxSix: 0,
+                handle: 'Sunder',
+                shirtName: 'VIKAS',
+                shirtNum: '13',
+                mode: 'SCREENSHOT_36',
+                camPreset: 'SCREENSHOT' // 'SCREENSHOT', 'WIDE', 'AERIAL'
+            };
+            try {
+                const raw = localStorage.getItem(SAVE_KEY);
+                return raw ? { ...def, ...JSON.parse(raw) } : def;
+            } catch (e) {
+                return def;
+            }
+        }
+
+        function writeSave() {
+            try {
+                localStorage.setItem(SAVE_KEY, JSON.stringify(profile));
+            } catch (e) {}
+            syncLobbyUI();
+        }
+
+        // --- PROCEDURAL WEB AUDIO SYNTHESIZER ---
+        class BroadcastAudio {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+            }
+            toggleMute() {
+                this.muted = !this.muted;
+                return this.muted;
+            }
+            playBatCrack(power = 1.0) {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(390 * power, now);
+                osc.frequency.exponentialRampToValueAtTime(72, now + 0.11);
+                gain.gain.setValueAtTime(0.35, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            }
+            playPitchBounce() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(185, now);
+                osc.frequency.exponentialRampToValueAtTime(68, now + 0.06);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.065);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.065);
+            }
+            playStumpShatter() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                [480, 320, 210].forEach((f, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(f, now + i * 0.035);
+                    osc.frequency.exponentialRampToValueAtTime(48, now + i * 0.035 + 0.18);
+                    gain.gain.setValueAtTime(0.22, now + i * 0.035);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.035 + 0.19);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + i * 0.035);
+                    osc.stop(now + i * 0.035 + 0.19);
+                });
+            }
+            playCrowdRoar() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(f, now + i * 0.055);
+                    gain.gain.setValueAtTime(0.1, now + i * 0.055);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.055 + 0.32);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + i * 0.055);
+                    osc.stop(now + i * 0.055 + 0.32);
+                });
+            }
+        }
+
+        const audio = new BroadcastAudio();
+
+        // --- PROCEDURAL TEXTURE GENERATORS FOR REALISTIC 3D LOOK ---
+        function createJerseyBackTexture(nameText, numText) {
+            const c = document.createElement('canvas');
+            c.width = 512;
+            c.height = 512;
+            const g = c.getContext('2d');
+
+            // Royal Blue main body
+            g.fillStyle = '#1d4ed8';
+            g.fillRect(0, 0, 512, 512);
+
+            // Vibrant Orange upper shoulders & collar yoke (Matching Screenshot!)
+            g.fillStyle = '#f97316';
+            g.beginPath();
+            g.moveTo(0, 0);
+            g.lineTo(512, 0);
+            g.lineTo(512, 165);
+            g.quadraticCurveTo(256, 215, 0, 165);
+            g.closePath();
+            g.fill();
+
+            // Subtle orange side panels
+            g.fillRect(0, 140, 42, 372);
+            g.fillRect(470, 140, 42, 372);
+
+            // Player Name ('VIKAS') in orange/gold with dark outline
+            g.font = '900 58px "Orbitron", sans-serif';
+            g.textAlign = 'center';
+            g.lineWidth = 6;
+            g.strokeStyle = '#0f172a';
+            g.fillStyle = '#fb923c';
+            g.strokeText((nameText || 'VIKAS').toUpperCase(), 256, 245);
+            g.fillText((nameText || 'VIKAS').toUpperCase(), 256, 245);
+
+            // Player Number ('13')
+            g.font = '900 165px "Rajdhani", sans-serif';
+            g.strokeText(String(numText || '13'), 256, 405);
+            g.fillText(String(numText || '13'), 256, 405);
+
+            const tex = new THREE.CanvasTexture(c);
+            tex.needsUpdate = true;
+            return tex;
+        }
+
+        function createStripedStumpTexture() {
+            const c = document.createElement('canvas');
+            c.width = 64;
+            c.height = 256;
+            const g = c.getContext('2d');
+
+            // Blue metallic base with crisp white bands (matching screenshot stumps)
+            const grad = g.createLinearGradient(0, 0, 0, 256);
+            grad.addColorStop(0, '#1e3a8a');
+            grad.addColorStop(0.5, '#2563eb');
+            grad.addColorStop(1, '#1d4ed8');
+            g.fillStyle = grad;
+            g.fillRect(0, 0, 64, 256);
+
+            g.fillStyle = '#ffffff';
+            g.fillRect(0, 22, 64, 14);
+            g.fillRect(0, 88, 64, 16);
+            g.fillRect(0, 165, 64, 14);
+
+            return new THREE.CanvasTexture(c);
+        }
+
+        function createClayPitchTexture() {
+            const c = document.createElement('canvas');
+            c.width = 512;
+            c.height = 1024;
+            const g = c.getContext('2d');
+
+            // Lush grass base
+            g.fillStyle = '#3f8f29';
+            g.fillRect(0, 0, 512, 1024);
+
+            // Soft feathered clay dirt pitch with dusty worn edges
+            const pitchGrad = g.createLinearGradient(0, 0, 512, 0);
+            pitchGrad.addColorStop(0, 'rgba(63, 143, 41, 1)');
+            pitchGrad.addColorStop(0.08, '#9a6b3e');
+            pitchGrad.addColorStop(0.2, '#b07b48');
+            pitchGrad.addColorStop(0.5, '#c28b56');
+            pitchGrad.addColorStop(0.8, '#b07b48');
+            pitchGrad.addColorStop(0.92, '#9a6b3e');
+            pitchGrad.addColorStop(1, 'rgba(63, 143, 41, 1)');
+
+            g.fillStyle = pitchGrad;
+            g.fillRect(0, 0, 512, 1024);
+
+            // Scuff marks & bowler footmarks
+            for (let i = 0; i < 450; i++) {
+                g.fillStyle = Math.random() > 0.5 ? 'rgba(255, 235, 205, 0.08)' : 'rgba(90, 52, 20, 0.09)';
+                const rx = 60 + Math.random() * 392;
+                const ry = Math.random() * 1024;
+                g.beginPath();
+                g.ellipse(rx, ry, Math.random() * 18 + 4, Math.random() * 45 + 10, 0, 0, Math.PI * 2);
+                g.fill();
+            }
+
+            return new THREE.CanvasTexture(c);
+        }
+
+        function createAdBannerTexture() {
+            const c = document.createElement('canvas');
+            c.width = 2048;
+            c.height = 128;
+            const g = c.getContext('2d');
+
+            const brands = [
+                { bg: '#ffffff', text: '#dc2626', label: 'CORE Network' },
+                { bg: '#0284c7', text: '#ffffff', label: 'ENERGY SPORT' },
+                { bg: '#16a34a', text: '#ffffff', label: 'CLOUD net' },
+                { bg: '#eab308', text: '#0f172a', label: 'NOVAFORGE 3D' }
+            ];
+
+            const segW = 2048 / 8;
+            for (let i = 0; i < 8; i++) {
+                const b = brands[i % brands.length];
+                g.fillStyle = b.bg;
+                g.fillRect(i * segW, 0, segW, 128);
+                g.strokeStyle = '#0f172a';
+                g.lineWidth = 4;
+                g.strokeRect(i * segW, 0, segW, 128);
+
+                g.font = '900 42px "Orbitron", sans-serif';
+                g.fillStyle = b.text;
+                g.textAlign = 'center';
+                g.textBaseline = 'middle';
+                g.fillText(b.label, i * segW + segW / 2, 64);
+            }
+
+            const tex = new THREE.CanvasTexture(c);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.repeat.set(3, 1);
+            return tex;
+        }
+
+        // --- THREE.JS 3D SCENE & ARTICULATED CHARACTERS ---
+        const BOUNDARY_R = 68;
+        let scene, camera, renderer;
+        let batterRoot, batterTorsoMesh, batShoulderPivot, bowlerRoot, bowlerShoulderPivot;
+        let strikerStumps = [], strikerBails = [];
+        let fielders3D = [];
+        let ballMesh, bounceTargetRing, whiteStreamLines = [];
+
+        function initThreeScene() {
+            const container = document.getElementById('webglViewport');
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x68a8e8); // Crisp Daylight Stadium Sky
+            scene.fog = new THREE.FogExp2(0x88bbee, 0.0028);
+
+            camera = new THREE.PerspectiveCamera(44, window.innerWidth / window.innerHeight, 0.1, 350);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            // Daylight Illumination + Crisp Ground Shadow Casting Directional Sun
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x3b7a28, 0.82);
+            scene.add(hemiLight);
+
+            const dirSun = new THREE.DirectionalLight(0xfffbeb, 1.15);
+            // Positioned behind-right so the batsman casts the exact diagonal shadow onto the left crease!
+            dirSun.position.set(16, 26, -12);
+            dirSun.castShadow = true;
+            dirSun.shadow.mapSize.width = 2048;
+            dirSun.shadow.mapSize.height = 2048;
+            dirSun.shadow.camera.near = 1;
+            dirSun.shadow.camera.far = 90;
+            const d = 24;
+            dirSun.shadow.camera.left = -d;
+            dirSun.shadow.camera.right = d;
+            dirSun.shadow.camera.top = d;
+            dirSun.shadow.camera.bottom = -d;
+            scene.add(dirSun);
+
+            // 1. Mowed Lush Green Outfield Stripes
+            const baseGrass = new THREE.Mesh(
+                new THREE.CircleGeometry(BOUNDARY_R + 6, 64),
+                new THREE.MeshLambertMaterial({ color: 0x3f8f29 })
+            );
+            baseGrass.rotation.x = -Math.PI / 2;
+            baseGrass.receiveShadow = true;
+            scene.add(baseGrass);
+
+            for (let i = -8; i <= 8; i++) {
+                if (i % 2 === 0) continue;
+                const stripe = new THREE.Mesh(
+                    new THREE.PlaneGeometry(4.5, BOUNDARY_R * 2),
+                    new THREE.MeshLambertMaterial({ color: 0x4aa032 })
+                );
+                stripe.rotation.x = -Math.PI / 2;
+                stripe.position.set(i * 4.5, 0.005, 0);
+                stripe.receiveShadow = true;
+                scene.add(stripe);
+            }
+
+            // 2. Textured Clay Pitch with Feathered Dusty Edges
+            const pitchTex = createClayPitchTexture();
+            const pitchMesh = new THREE.Mesh(
+                new THREE.PlaneGeometry(4.2, 24.5),
+                new THREE.MeshLambertMaterial({ map: pitchTex })
+            );
+            pitchMesh.rotation.x = -Math.PI / 2;
+            pitchMesh.position.set(0, 0.012, 0);
+            pitchMesh.receiveShadow = true;
+            scene.add(pitchMesh);
+
+            // Crisp White Popping, Bowling & Return Crease Lines (Matching Screenshot Foreground)
+            buildCreaseLinesAtEnd(-10, 1);
+            buildCreaseLinesAtEnd(10, -1);
+
+            // 3. Blue-and-White Striped Stumps & Pink/Red Zing Bails
+            const stumpTex = createStripedStumpTexture();
+            buildStumpsAtEnd(-10, stumpTex, true);
+            buildStumpsAtEnd(10, stumpTex, false);
+
+            // 4. Perimeter Advertising Boards ('ENERGY SPORT', 'CORE Network') & Green/Yellow Stadium Stands
+            const adTex = createAdBannerTexture();
+            const adWall = new THREE.Mesh(
+                new THREE.CylinderGeometry(BOUNDARY_R + 2, BOUNDARY_R + 2, 1.9, 64, 1, true),
+                new THREE.MeshBasicMaterial({ map: adTex, side: THREE.DoubleSide })
+            );
+            adWall.position.y = 0.95;
+            scene.add(adWall);
+
+            // Multi-Tier Stadium Bowl
+            const lowerBowl = new THREE.Mesh(
+                new THREE.CylinderGeometry(84, BOUNDARY_R + 3, 11, 64, 1, true),
+                new THREE.MeshLambertMaterial({ color: 0x1e293b, side: THREE.DoubleSide })
+            );
+            lowerBowl.position.y = 6.5;
+            scene.add(lowerBowl);
+
+            const midFacia = new THREE.Mesh(
+                new THREE.CylinderGeometry(84.2, 84.2, 2.0, 64, 1, true),
+                new THREE.MeshBasicMaterial({ color: 0x16a34a, side: THREE.DoubleSide })
+            );
+            midFacia.position.y = 12.5;
+            scene.add(midFacia);
+
+            const upperBowl = new THREE.Mesh(
+                new THREE.CylinderGeometry(96, 84.5, 13, 64, 1, true),
+                new THREE.MeshLambertMaterial({ color: 0x334155, side: THREE.DoubleSide })
+            );
+            upperBowl.position.y = 19.5;
+            scene.add(upperBowl);
+
+            // 3,000 Green, Yellow & White Crowd Spectators (Matching Screenshot Stands)
+            const crowdGeo = new THREE.BufferGeometry();
+            const count = 3000;
+            const pos = new Float32Array(count * 3);
+            const col = new Float32Array(count * 3);
+            const cPalette = [
+                new THREE.Color(0xfacc15), // Yellow
+                new THREE.Color(0x22c55e), // Green
+                new THREE.Color(0xffffff), // White
+                new THREE.Color(0x38bdf8)  // Sky Blue
+            ];
+            for (let i = 0; i < count; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const upper = Math.random() > 0.48;
+                const r = upper ? (85 + Math.random() * 10) : (72 + Math.random() * 11);
+                const y = upper ? (14 + (r - 85) * 1.1) : (2 + (r - 72) * 0.85);
+                pos[i * 3] = Math.cos(a) * r;
+                pos[i * 3 + 1] = y;
+                pos[i * 3 + 2] = Math.sin(a) * r;
+                const c = cPalette[Math.floor(Math.random() * cPalette.length)];
+                col[i * 3] = c.r;
+                col[i * 3 + 1] = c.g;
+                col[i * 3 + 2] = c.b;
+            }
+            crowdGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            crowdGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+            scene.add(new THREE.Points(crowdGeo, new THREE.PointsMaterial({ size: 1.05, vertexColors: true })));
+
+            // 5. Build Articulated 'VIKAS #13' Batsman in Orange/Blue Indian Kit
+            batterRoot = buildVikasBatsman3D();
+            batterRoot.position.set(-0.48, 0, -9.05);
+            scene.add(batterRoot);
+
+            // 6. Build Articulated Maroon/Navy Bowler & Outfielders (Matching Screenshot)
+            bowlerRoot = buildFielderOrBowler3D(true);
+            bowlerRoot.position.set(0.32, 0, 11.2);
+            bowlerRoot.rotation.y = Math.PI;
+            scene.add(bowlerRoot);
+
+            buildOutfielders3D();
+
+            // 7. Glossy Red Leather Cricket Ball with White Stitched Seam
+            ballMesh = new THREE.Group();
+            const leatherSphere = new THREE.Mesh(
+                new THREE.SphereGeometry(0.14, 20, 20),
+                new THREE.MeshPhongMaterial({ color: 0x991b1b, shininess: 110 })
+            );
+            leatherSphere.castShadow = true;
+            ballMesh.add(leatherSphere);
+
+            const seamRing = new THREE.Mesh(
+                new THREE.TorusGeometry(0.142, 0.012, 8, 24),
+                new THREE.MeshBasicMaterial({ color: 0xffffff })
+            );
+            seamRing.rotation.y = 0.4;
+            ballMesh.add(seamRing);
+            ballMesh.position.set(0.3, 1.65, 8.5);
+            scene.add(ballMesh);
+
+            // 8. 3 Sleek White Air-Stream Trail Lines Behind the Ball (Matching Screenshot!)
+            const offsets = [[-0.08, -0.04], [0, 0], [0.08, -0.04]];
+            offsets.forEach(([ox, oy]) => {
+                const lGeo = new THREE.BufferGeometry();
+                lGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(45 * 3), 3));
+                const line = new THREE.Line(
+                    lGeo,
+                    new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.72 })
+                );
+                line.userData = { ox, oy, pts: [] };
+                scene.add(line);
+                whiteStreamLines.push(line);
+            });
+
+            // 9. Pitch Bounce Indicator Ring
+            const ringGeo = new THREE.RingGeometry(0.26, 0.38, 32);
+            ringGeo.rotateX(-Math.PI / 2);
+            bounceTargetRing = new THREE.Mesh(
+                ringGeo,
+                new THREE.MeshBasicMaterial({ color: 0x22c55e, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
+            );
+            bounceTargetRing.position.set(0.05, 0.025, -4.5);
+            scene.add(bounceTargetRing);
+        }
+
+        function buildCreaseLinesAtEnd(stumpZ, dirToCenter) {
+            const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const popZ = stumpZ + dirToCenter * 1.22;
+
+            // Bowling Crease (through stumps)
+            const bowlLine = new THREE.Mesh(new THREE.PlaneGeometry(2.64, 0.07), lineMat);
+            bowlLine.rotation.x = -Math.PI / 2;
+            bowlLine.position.set(0, 0.018, stumpZ);
+            scene.add(bowlLine);
+
+            // Popping Crease (front line)
+            const popLine = new THREE.Mesh(new THREE.PlaneGeometry(3.66, 0.075), lineMat);
+            popLine.rotation.x = -Math.PI / 2;
+            popLine.position.set(0, 0.018, popZ);
+            scene.add(popLine);
+
+            // Two Side Return Creases
+            [-1.32, 1.32].forEach(rx => {
+                const retLine = new THREE.Mesh(new THREE.PlaneGeometry(0.075, 2.44), lineMat);
+                retLine.rotation.x = -Math.PI / 2;
+                retLine.position.set(rx, 0.018, stumpZ + dirToCenter * 0.2);
+                scene.add(retLine);
+            });
+        }
+
+        function buildStumpsAtEnd(zPos, stumpTex, isStriker) {
+            const stumpMat = new THREE.MeshPhongMaterial({ map: stumpTex, shininess: 60 });
+            const bailMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e });
+
+            [-0.14, 0, 0.14].forEach(sx => {
+                const stump = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.78, 12), stumpMat);
+                stump.position.set(sx, 0.39, zPos);
+                stump.castShadow = true;
+                stump.userData = { baseX: sx, baseY: 0.39, baseZ: zPos, vx: 0, vy: 0, vz: 0, rx: 0, rz: 0 };
+                scene.add(stump);
+                if (isStriker) strikerStumps.push(stump);
+            });
+
+            [-0.07, 0.07].forEach(bx => {
+                const bail = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.13, 8), bailMat);
+                bail.rotation.z = Math.PI / 2;
+                bail.position.set(bx, 0.79, zPos);
+                bail.userData = { baseX: bx, baseY: 0.79, baseZ: zPos, vx: 0, vy: 0, vz: 0 };
+                scene.add(bail);
+                if (isStriker) strikerBails.push(bail);
+            });
+        }
+
+        function buildVikasBatsman3D() {
+            const root = new THREE.Group();
+
+            const bluePantsMat = new THREE.MeshLambertMaterial({ color: 0x1d4ed8 });
+            const bluePadsMat = new THREE.MeshPhongMaterial({ color: 0x2563eb, shininess: 40 });
+            const orangeSleeveMat = new THREE.MeshLambertMaterial({ color: 0xf97316 });
+            const skinMat = new THREE.MeshLambertMaterial({ color: 0xc68642 });
+            const whiteGloveMat = new THREE.MeshLambertMaterial({ color: 0xf8fafc });
+            const helmetMat = new THREE.MeshPhongMaterial({ color: 0x1d4ed8, shininess: 70 });
+
+            // Left & Right Legs + Blue Batting Pads + White Shoes
+            [-0.13, 0.13].forEach((lx, idx) => {
+                const legGroup = new THREE.Group();
+                legGroup.position.set(lx, 0, idx === 0 ? 0.12 : -0.08);
+
+                const thigh = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.075, 0.78, 10), bluePantsMat);
+                thigh.position.y = 0.39;
+                thigh.castShadow = true;
+                legGroup.add(thigh);
+
+                // 3-Roll Blue Leg Guard Pad
+                const pad = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.56, 0.14), bluePadsMat);
+                pad.position.set(0, 0.34, 0.04);
+                pad.castShadow = true;
+                legGroup.add(pad);
+
+                const shoe = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.09, 0.24), whiteGloveMat);
+                shoe.position.set(0, 0.045, 0.05);
+                shoe.castShadow = true;
+                legGroup.add(shoe);
+
+                root.add(legGroup);
+            });
+
+            // Torso with 'VIKAS #13' Procedural Jersey Texture on the Back (-Z face)
+            const jerseyTex = createJerseyBackTexture(profile.shirtName, profile.shirtNum);
+            const torsoMats = [
+                orangeSleeveMat, // right
+                orangeSleeveMat, // left
+                orangeSleeveMat, // top
+                bluePantsMat,    // bottom
+                bluePantsMat,    // front (+Z)
+                new THREE.MeshLambertMaterial({ map: jerseyTex }) // back (-Z facing camera!)
+            ];
+            batterTorsoMesh = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.66, 0.24), torsoMats);
+            batterTorsoMesh.position.set(0, 1.08, 0);
+            batterTorsoMesh.castShadow = true;
+            root.add(batterTorsoMesh);
+
+            // Head & Blue Helmet
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.155, 16, 16), skinMat);
+            head.position.set(0, 1.56, 0);
+            head.castShadow = true;
+            root.add(head);
+
+            const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.175, 16, 16, 0, Math.PI * 2, 0, Math.PI * 0.68), helmetMat);
+            helmet.position.set(0, 1.58, 0);
+            helmet.castShadow = true;
+            root.add(helmet);
+
+            // Articulated Arms + White Batting Gloves + Willow Cricket Bat with Blue Sticker
+            batShoulderPivot = new THREE.Group();
+            batShoulderPivot.position.set(0.0, 1.34, 0.12);
+
+            [-0.21, 0.21].forEach(ax => {
+                const upperArm = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.055, 0.36, 10), orangeSleeveMat);
+                upperArm.position.set(ax, 0.12, 0.08);
+                upperArm.rotation.z = ax > 0 ? 0.38 : -0.38;
+                upperArm.castShadow = true;
+                batShoulderPivot.add(upperArm);
+            });
+
+            const gloves = new THREE.Mesh(new THREE.SphereGeometry(0.095, 12, 12), whiteGloveMat);
+            gloves.position.set(0, 0.34, 0.22);
+            gloves.castShadow = true;
+            batShoulderPivot.add(gloves);
+
+            // Cricket Bat (Handle + Willow Blade + Blue/White Sticker)
+            const batGroup = new THREE.Group();
+            batGroup.position.set(0, 0.34, 0.22);
+
+            const handle = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.018, 0.018, 0.28, 8),
+                new THREE.MeshLambertMaterial({ color: 0xf8fafc })
+            );
+            handle.position.set(0.08, 0.04, 0.05);
+            handle.rotation.z = -0.5;
+            batGroup.add(handle);
+
+            const blade = new THREE.Mesh(
+                new THREE.BoxGeometry(0.115, 0.68, 0.042),
+                new THREE.MeshPhongMaterial({ color: 0xdeb887 })
+            );
+            blade.position.set(0.32, -0.14, 0.14);
+            blade.rotation.z = -0.55;
+            blade.rotation.x = 0.25;
+            blade.castShadow = true;
+            batGroup.add(blade);
+
+            const sticker = new THREE.Mesh(
+                new THREE.PlaneGeometry(0.10, 0.36),
+                new THREE.MeshBasicMaterial({ color: 0x1d4ed8, side: THREE.DoubleSide })
+            );
+            sticker.position.set(0.32, -0.12, 0.165);
+            sticker.rotation.z = -0.55;
+            sticker.rotation.x = 0.25;
+            batGroup.add(sticker);
+
+            batShoulderPivot.add(batGroup);
+            root.add(batShoulderPivot);
+
+            // Set initial ready pose
+            setBatterPose('READY');
+            return root;
+        }
+
+        function setBatterPose(pose, swingProgress = 0) {
+            if (!batShoulderPivot || !batterRoot) return;
+            if (pose === 'READY') {
+                // Classic crouched batting stance with bat resting near crease
+                batterRoot.rotation.y = 0.28;
+                batShoulderPivot.rotation.set(1.25, -0.2, -0.35);
+            } else if (pose === 'FOLLOW_THROUGH') {
+                // Exact high over-the-head follow-through pose from the screenshot!
+                batterRoot.rotation.y = 0.05;
+                const p = Math.min(1, swingProgress);
+                batShoulderPivot.rotation.set(
+                    1.25 - p * 1.45,
+                    -0.2 + p * 0.25,
+                    -0.35 + p * 0.45
+                );
+            }
+        }
+
+        function updateJerseyTexture3D() {
+            if (!batterTorsoMesh) return;
+            const newTex = createJerseyBackTexture(profile.shirtName, profile.shirtNum);
+            batterTorsoMesh.material[5].map = newTex;
+            batterTorsoMesh.material[5].needsUpdate = true;
+        }
+
+        function buildFielderOrBowler3D(isBowler) {
+            const group = new THREE.Group();
+            const maroonShirt = new THREE.MeshLambertMaterial({ color: 0x881337 });
+            const navyPants = new THREE.MeshLambertMaterial({ color: 0x0f172a });
+            const skin = new THREE.MeshLambertMaterial({ color: 0xfbbf24 });
+
+            [-0.12, 0.12].forEach(lx => {
+                const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.06, 0.76, 8), navyPants);
+                leg.position.set(lx, 0.38, 0);
+                leg.castShadow = true;
+                group.add(leg);
+            });
+
+            const torso = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.62, 0.22), maroonShirt);
+            torso.position.set(0, 1.05, 0);
+            torso.castShadow = true;
+            group.add(torso);
+
+            const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 12), skin);
+            head.position.set(0, 1.52, 0);
+            head.castShadow = true;
+            group.add(head);
+
+            const armPivot = new THREE.Group();
+            armPivot.position.set(-0.25, 1.3, 0);
+            const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.045, 0.56, 8), maroonShirt);
+            arm.position.set(0, -0.24, 0);
+            arm.castShadow = true;
+            armPivot.add(arm);
+            group.add(armPivot);
+
+            if (isBowler) bowlerShoulderPivot = armPivot;
+            return group;
+        }
+
+        function buildOutfielders3D() {
+            // Positioned to match the visible fielders on the left/off-side in the screenshot
+            const positions = [
+                [-6.8, 3.2],    // Short Cover / Point (Visible on left in screenshot!)
+                [-4.2, 12.5],   // Silly Mid-Off (Visible in screenshot!)
+                [2.2, 16.5],    // Mid-On
+                [8.5, 4.5],     // Mid-Wicket
+                [-18.0, 26.0],  // Deep Extra Cover
+                [19.0, 28.0],   // Long-On
+                [-14.0, -4.0],  // Backward Point
+                [15.0, -5.0]    // Square Leg
+            ];
+
+            positions.forEach(([fx, fz]) => {
+                const f = buildFielderOrBowler3D(false);
+                f.position.set(fx, 0, fz);
+                f.lookAt(0, 0, -9);
+                f.userData = { hx: fx, hz: fz };
+                scene.add(f);
+                fielders3D.push(f);
+            });
+        }
+
+        // --- MATCH & GAMEPLAY SIMULATION STATE ---
+        let isLobbyOpen = true;
+        let hasActiveMatch = false;
+
+        let game = {
+            innings: 1, // 1 = Batting, 2 = Bowling
+            runs: 23,
+            target: 36,
+            ballsBowled: 4,
+            maxBalls: 12,
+            wickets: 0,
+            maxWickets: 3,
+            overLog: ['4', '1', '6', '2'],
+            wagonShots: [],
+            aimAngle: 0, // radians
+            bowlType: 'OUTSWING'
+        };
+
+        // Delivery state: 'IDLE', 'RUNUP', 'BOWLED', 'HIT_FLIGHT', 'SETTLED'
+        let ballSim = {
+            state: 'IDLE',
+            timer: 0,
+            progress: 0, // 0 at bowler (z=9.2), 1.0 at striker bat (z=-8.8)
+            flightDur: 0.78,
+            speedKph: 144.8,
+            startX: 0.28,
+            bounceX: 0.08,
+            bounceZ: -3.8,
+            swingX: -0.18,
+            seamTurn: 0.14,
+            bounced: false,
+            swung: false,
+            swingAnim: 0,
+            x: 0.28,
+            y: 1.95,
+            z: 9.2,
+            vx: 0,
+            vy: 0,
+            vz: 0,
+            isLoft: false,
+            stumpsBroken: false,
+            camFollowBall: false,
+            camShake: 0
+        };
+
+        function startWorldTourMatch() {
+            profile.handle = document.getElementById('inpPlayerHandle').value.trim() || 'Sunder';
+            profile.shirtName = (document.getElementById('inpShirtName').value.trim() || 'VIKAS').toUpperCase();
+            profile.shirtNum = document.getElementById('inpShirtNum').value.trim() || '13';
+            writeSave();
+            updateJerseyTexture3D();
+
+            if (profile.mode === 'SCREENSHOT_36') {
+                // Exact state from the user's screenshot: 23 Runs, Target 36!
+                game.innings = 1;
+                game.runs = 23;
+                game.target = 36;
+                game.ballsBowled = 4;
+                game.maxBalls = 12;
+                game.wickets = 0;
+                game.maxWickets = 3;
+                game.overLog = ['4', '1', '6', '2'];
+            } else if (profile.mode === 'SUPER_OVER') {
+                game.innings = 1;
+                game.runs = 0;
+                game.target = 20;
+                game.ballsBowled = 0;
+                game.maxBalls = 6;
+                game.wickets = 0;
+                game.maxWickets = 2;
+                game.overLog = [];
+            } else {
+                game.innings = 1;
+                game.runs = 0;
+                game.target = 42;
+                game.ballsBowled = 0;
+                game.maxBalls = 12;
+                game.wickets = 0;
+                game.maxWickets = 4;
+                game.overLog = [];
+            }
+
+            game.wagonShots = [];
+            hasActiveMatch = true;
+            setupNextDelivery();
+            updateBroadcastHUD();
+        }
+
+        function setupNextDelivery() {
+            ballSim.state = 'IDLE';
+            ballSim.bounced = false;
+            ballSim.swung = false;
+            ballSim.stumpsBroken = false;
+            ballSim.camFollowBall = false;
+            ballSim.swingAnim = 0;
+            ballSim.x = 0.28;
+            ballSim.y = 1.95;
+            ballSim.z = 9.2;
+            ballMesh.position.set(ballSim.x, ballSim.y, ballSim.z);
+            clearWhiteStreamTrails();
+
+            // Reset Stumps & Bails
+            strikerStumps.forEach(s => {
+                s.position.set(s.userData.baseX, s.userData.baseY, s.userData.baseZ);
+                s.rotation.set(0, 0, 0);
+            });
+            strikerBails.forEach(b => {
+                b.position.set(b.userData.baseX, b.userData.baseY, b.userData.baseZ);
+                b.rotation.set(0, 0, Math.PI / 2);
+            });
+
+            fielders3D.forEach(f => {
+                f.position.set(f.userData.hx, 0, f.userData.hz);
+                f.lookAt(0, 0, -9);
+            });
+
+            bowlerRoot.position.set(0.32, 0, 14.2);
+            setBatterPose('READY');
+            document.getElementById('timingMeterWrap').classList.add('hidden');
+            document.getElementById('timingMeterWrap').classList.remove('flex');
+
+            const isBat = game.innings === 1;
+            document.getElementById('battingControls').classList.toggle('hidden', !isBat);
+            document.getElementById('battingControls').classList.toggle('flex', isBat);
+            document.getElementById('bowlingControls').classList.toggle('hidden', isBat);
+            document.getElementById('bowlingControls').classList.toggle('flex', !isBat);
+
+            if (isBat) {
+                setTimeout(() => {
+                    if (!isLobbyOpen && ballSim.state === 'IDLE' && game.innings === 1) {
+                        startGaryBowlerRunup();
+                    }
+                }, 750);
+            } else {
+                bounceTargetRing.visible = true;
+            }
+        }
+
+        function startGaryBowlerRunup() {
+            if (ballSim.state !== 'IDLE') return;
+            const balls = [
+                { kph: 145.6, dur: 0.76, bz: -3.8, swing: -0.22, turn: 0.16, col: 0x22c55e },
+                { kph: 148.2, dur: 0.72, bz: -7.6, swing: 0.15, turn: -0.08, col: 0xfbbf24 },
+                { kph: 139.4, dur: 0.80, bz: -1.6, swing: -0.05, turn: 0.05, col: 0xf43f5e },
+                { kph: 96.5, dur: 0.94, bz: -4.8, swing: 0.1, turn: -0.52, col: 0x38bdf8 }
+            ];
+            const d = balls[Math.floor(Math.random() * balls.length)];
+            ballSim.speedKph = +(d.kph + (Math.random() * 2 - 1)).toFixed(1);
+            ballSim.flightDur = d.dur;
+            ballSim.startX = 0.28;
+            ballSim.bounceX = (Math.random() - 0.5) * 0.45;
+            ballSim.bounceZ = d.bz;
+            ballSim.swingX = d.swing;
+            ballSim.seamTurn = d.turn;
+            ballSim.state = 'RUNUP';
+            ballSim.timer = 0.46;
+
+            bounceTargetRing.position.set(ballSim.bounceX, 0.025, ballSim.bounceZ);
+            bounceTargetRing.material.color.setHex(d.col);
+            bounceTargetRing.visible = true;
+
+            document.getElementById('hudDeliverySpeed').textContent = `${ballSim.speedKph} KPH`;
+        }
+
+        // --- PLAYER BATTING SWING & SWIPE-TO-HIT ---
+        function triggerBatsmanSwing(isLoft = false) {
+            if (isLobbyOpen || game.innings !== 1) return;
+            audio.init();
+
+            if (ballSim.state === 'IDLE') {
+                startGaryBowlerRunup();
+                return;
+            }
+            if (ballSim.state !== 'BOWLED' || ballSim.swung) return;
+
+            ballSim.swung = true;
+            ballSim.swingAnim = 0.01;
+
+            // Ideal timing sweet-spot is around progress 0.86 to 0.96
+            const diff = ballSim.progress - 0.91;
+            const absDiff = Math.abs(diff);
+
+            if (absDiff <= 0.105) {
+                // PERFECT SWEET-SPOT CONTACT!
+                strikeBall3D(isLoft, 1.24, '⚡ PERFECT TIMING!');
+            } else if (absDiff <= 0.20) {
+                // GOOD CONTACT
+                strikeBall3D(isLoft, 0.88, diff < 0 ? 'EARLY TIMING!' : 'LATE TIMING!');
+            } else {
+                showShotCallout(diff < 0 ? 'TOO EARLY!' : 'SWUNG LATE!', '#f43f5e');
+            }
+        }
+
+        function strikeBall3D(isLoft, powerMult, label) {
+            ballSim.state = 'HIT_FLIGHT';
+            ballSim.camFollowBall = true;
+            bounceTargetRing.visible = false;
+            document.getElementById('timingMeterWrap').classList.add('hidden');
+            document.getElementById('timingMeterWrap').classList.remove('flex');
+
+            audio.playBatCrack(powerMult);
+            ballSim.camShake = isLoft && powerMult > 1.1 ? 0.35 : 0.14;
+
+            const speedXZ = (isLoft ? 38 : 34) * powerMult;
+            const theta = game.aimAngle + (Math.random() - 0.5) * 0.12;
+            ballSim.vx = Math.sin(theta) * speedXZ;
+            ballSim.vz = Math.cos(theta) * speedXZ;
+            ballSim.vy = isLoft ? (16.5 * powerMult) : 2.8;
+            ballSim.isLoft = isLoft;
+
+            showShotCallout(label, '#4ade80');
+        }
+
+        // --- MAIN 3D SIMULATION & CAMERA UPDATE ---
+        function updateSimulation(dt) {
+            if (isLobbyOpen) {
+                // Subtle cinematic camera pan behind the batsman in Lobby
+                const t = performance.now() * 0.0004;
+                camera.position.set(Math.sin(t) * 1.4, 2.35, -13.2);
+                camera.lookAt(0, 1.15, 2.0);
+                return;
+            }
+
+            if (ballSim.camShake > 0) ballSim.camShake = Math.max(0, ballSim.camShake - dt * 1.5);
+
+            // Animate Vikas #13 high follow-through finish (Exact Screenshot Pose!)
+            if (ballSim.swung && ballSim.swingAnim < 1) {
+                ballSim.swingAnim = Math.min(1, ballSim.swingAnim + dt * 4.8);
+                setBatterPose('FOLLOW_THROUGH', ballSim.swingAnim);
+            }
+
+            // 1. Bowler Run-up
+            if (ballSim.state === 'RUNUP') {
+                ballSim.timer -= dt;
+                bowlerRoot.position.z = 9.2 + Math.max(0, ballSim.timer * 10.5);
+                if (bowlerShoulderPivot) bowlerShoulderPivot.rotation.x = ballSim.timer * 8.5;
+                if (ballSim.timer <= 0) {
+                    ballSim.state = 'BOWLED';
+                    ballSim.progress = 0;
+                    clearWhiteStreamTrails();
+                    document.getElementById('timingMeterWrap').classList.remove('hidden');
+                    document.getElementById('timingMeterWrap').classList.add('flex');
+                }
+            }
+
+            // 2. Ball Approaching Batsman (z: +9.2 -> -10.0)
+            if (ballSim.state === 'BOWLED') {
+                ballSim.progress += dt / ballSim.flightDur;
+                const p = ballSim.progress;
+
+                // Update Timing Bar Marker
+                const marker = document.getElementById('timingMarker');
+                if (marker) marker.style.left = `${Math.min(97, p * 76)}%`;
+
+                ballSim.z = 9.2 - p * 19.2;
+                const bounceP = (9.2 - ballSim.bounceZ) / 19.2;
+
+                if (p < bounceP) {
+                    const bp = p / bounceP;
+                    ballSim.x = ballSim.startX * (1 - bp) + ballSim.bounceX * bp + Math.sin(bp * Math.PI) * ballSim.swingX;
+                    ballSim.y = 1.95 * (1 - bp * bp);
+                } else {
+                    if (!ballSim.bounced) {
+                        ballSim.bounced = true;
+                        audio.playPitchBounce();
+                    }
+                    const ap = (p - bounceP) / (1 - bounceP);
+                    ballSim.x = ballSim.bounceX + ap * ballSim.seamTurn;
+                    const peak = ballSim.bounceZ > -2.5 ? 1.48 : (ballSim.bounceZ < -6.8 ? 0.38 : 0.98);
+                    ballSim.y = Math.sin(ap * Math.PI * 0.85) * peak;
+                }
+
+                ballMesh.position.set(ballSim.x, Math.max(0.14, ballSim.y), ballSim.z);
+                ballMesh.rotation.x += 18 * dt;
+                recordWhiteStreamTrails(ballSim.x, Math.max(0.14, ballSim.y), ballSim.z);
+
+                // If Player is Bowling in 2-Over Mode, AI Batsman swings at p >= 0.89
+                if (game.innings === 2 && p >= 0.89 && !ballSim.swung) {
+                    ballSim.swung = true;
+                    ballSim.swingAnim = 0.01;
+                    if (Math.random() < 0.35) {
+                        // AI misses!
+                    } else {
+                        game.aimAngle = (Math.random() - 0.5) * 1.5;
+                        strikeBall3D(Math.random() < 0.4, 0.95, 'AI SHOT!');
+                        return;
+                    }
+                }
+
+                // Check Stump Collision at z <= -10
+                if (p >= 1.0) {
+                    document.getElementById('timingMeterWrap').classList.add('hidden');
+                    document.getElementById('timingMeterWrap').classList.remove('flex');
+                    if (Math.abs(ballSim.x) <= 0.24 && ballSim.y <= 0.84) {
+                        shatterStrikerStumps();
+                        finishBallResult(0, true, '💥 BOWLED! STUMPS SHATTERED!');
+                    } else {
+                        finishBallResult(0, false, 'DOT BALL!');
+                    }
+                }
+            }
+
+            // 3. Ball Hit Into Outfield / Grandstands
+            if (ballSim.state === 'HIT_FLIGHT') {
+                ballSim.x += ballSim.vx * dt;
+                ballSim.y += ballSim.vy * dt;
+                ballSim.z += ballSim.vz * dt;
+                ballSim.vy -= 19.2 * dt;
+
+                if (ballSim.y <= 0.14 && ballSim.vy < 0) {
+                    ballSim.y = 0.14;
+                    ballSim.vy = -ballSim.vy * 0.44;
+                    ballSim.vx *= 0.85;
+                    ballSim.vz *= 0.85;
+                    if (Math.abs(ballSim.vy) > 1.2) audio.playPitchBounce();
+                }
+
+                ballMesh.position.set(ballSim.x, ballSim.y, ballSim.z);
+                recordWhiteStreamTrails(ballSim.x, ballSim.y, ballSim.z);
+
+                // Fielders chase & intercept
+                for (const f of fielders3D) {
+                    const dx = ballSim.x - f.position.x;
+                    const dz = ballSim.z - f.position.z;
+                    const dist = Math.hypot(dx, dz);
+                    if (dist < 26) {
+                        const step = 10.2 * dt;
+                        f.position.x += (dx / (dist || 1)) * Math.min(dist, step);
+                        f.position.z += (dz / (dist || 1)) * Math.min(dist, step);
+                        f.lookAt(ballSim.x, 0, ballSim.z);
+                    }
+                    if (dist < 1.5 && ballSim.y < 2.4) {
+                        if (ballSim.isLoft && ballSim.y > 0.45) {
+                            finishBallResult(0, true, '🧤 CAUGHT BY FIELDER!');
+                            return;
+                        } else {
+                            const rDist = Math.hypot(ballSim.x, ballSim.z);
+                            const r = rDist > 34 ? 2 : (rDist > 14 ? 1 : 0);
+                            finishBallResult(r, false, r > 0 ? `${r} RUN${r > 1 ? 'S' : ''}!` : 'FIELDED! NO RUN');
+                            return;
+                        }
+                    }
+                }
+
+                // Boundary Check
+                const rad = Math.hypot(ballSim.x, ballSim.z);
+                if (rad >= BOUNDARY_R) {
+                    const isSix = ballSim.isLoft && ballSim.y > 1.1;
+                    if (isSix) {
+                        const distM = Math.min(118, Math.round(78 + Math.hypot(ballSim.vx, ballSim.vz) * 0.85 + ballSim.y));
+                        document.getElementById('hudSixDistBadge').textContent = `LAST SIX: ${distM}M`;
+                        if (distM > profile.maxSix) profile.maxSix = distM;
+                        audio.playCrowdRoar();
+                        finishBallResult(6, false, `🚀 ${distM}M MASSIVE SIX!`);
+                    } else {
+                        audio.playCrowdRoar();
+                        finishBallResult(4, false, '🏏 CRACKING FOUR!');
+                    }
+                    return;
+                }
+
+                if (Math.hypot(ballSim.vx, ballSim.vz) < 2.0 && ballSim.y <= 0.2) {
+                    const r = rad > 32 ? 2 : (rad > 14 ? 1 : 0);
+                    finishBallResult(r, false, r > 0 ? `+${r} RUNS!` : 'DOT BALL');
+                    return;
+                }
+            }
+
+            // Animate flying stumps when bowled
+            if (ballSim.stumpsBroken) {
+                strikerStumps.forEach(s => {
+                    s.position.x += s.userData.vx * dt;
+                    s.position.y = Math.max(0.08, s.position.y + s.userData.vy * dt);
+                    s.position.z += s.userData.vz * dt;
+                    s.userData.vy -= 15 * dt;
+                    s.rotation.x += s.userData.rx * dt;
+                    s.rotation.z += s.userData.rz * dt;
+                });
+                strikerBails.forEach(b => {
+                    b.position.x += b.userData.vx * dt;
+                    b.position.y = Math.max(0.05, b.position.y + b.userData.vy * dt);
+                    b.position.z += b.userData.vz * dt;
+                    b.userData.vy -= 14 * dt;
+                    b.rotation.x += 12 * dt;
+                });
+            }
+
+            updateCameraView(dt);
+        }
+
+        function updateCameraView(dt) {
+            const sx = (Math.random() - 0.5) * ballSim.camShake;
+            const sy = (Math.random() - 0.5) * ballSim.camShake;
+
+            if (ballSim.camFollowBall && ballSim.state === 'HIT_FLIGHT') {
+                // Smooth action broadcast tracker following the ball into the stands
+                const targetPos = new THREE.Vector3(
+                    ballSim.x * 0.38,
+                    Math.max(3.6, ballSim.y * 0.55 + 3.2),
+                    -14.5 + ballSim.z * 0.28
+                );
+                camera.position.lerp(targetPos, dt * 4.5);
+                camera.lookAt(ballSim.x, Math.max(0.8, ballSim.y * 0.6), ballSim.z);
+                return;
+            }
+
+            if (profile.camPreset === 'SCREENSHOT') {
+                // EXACT Screenshot Camera: Tight behind-the-stumps & over-the-shoulder of VIKAS #13!
+                camera.position.set(-0.08 + sx, 2.28 + sy, -12.85);
+                camera.lookAt(0.05, 1.02, 2.5);
+            } else if (profile.camPreset === 'WIDE') {
+                camera.position.set(0.6 + sx, 4.8 + sy, -17.5);
+                camera.lookAt(0, 0.9, 1.0);
+            } else {
+                camera.position.set(-14 + sx, 19 + sy, -20);
+                camera.lookAt(0, 0, 0);
+            }
+        }
+
+        function recordWhiteStreamTrails(bx, by, bz) {
+            whiteStreamLines.forEach(line => {
+                const pts = line.userData.pts;
+                pts.push(bx + line.userData.ox, by + line.userData.oy, bz);
+                if (pts.length > 45 * 3) pts.splice(0, 3);
+
+                const arr = line.geometry.attributes.position.array;
+                for (let i = 0; i < 45 * 3; i++) {
+                    arr[i] = i < pts.length ? pts[i] : pts[pts.length - 3 + (i % 3)] || 0;
+                }
+                line.geometry.attributes.position.needsUpdate = true;
+                line.geometry.setDrawRange(0, Math.floor(pts.length / 3));
+            });
+        }
+
+        function clearWhiteStreamTrails() {
+            whiteStreamLines.forEach(line => {
+                line.userData.pts = [];
+                line.geometry.setDrawRange(0, 0);
+            });
+        }
+
+        function shatterStrikerStumps() {
+            ballSim.stumpsBroken = true;
+            audio.playStumpShatter();
+            ballSim.camShake = 0.45;
+            strikerStumps.forEach(s => {
+                s.userData.vx = (Math.random() - 0.5) * 3.5;
+                s.userData.vy = 3.2 + Math.random() * 2.5;
+                s.userData.vz = -4.5 - Math.random() * 2.5;
+                s.userData.rx = -7 - Math.random() * 5;
+                s.userData.rz = (Math.random() - 0.5) * 7;
+            });
+            strikerBails.forEach(b => {
+                b.userData.vx = (Math.random() - 0.5) * 5;
+                b.userData.vy = 4.8 + Math.random() * 2.5;
+                b.userData.vz = -5 - Math.random() * 3;
+            });
+        }
+
+        function finishBallResult(runs, isOut, bannerText) {
+            ballSim.state = 'SETTLED';
+            showShotCallout(bannerText, isOut ? '#f43f5e' : (runs >= 6 ? '#fbbf24' : (runs === 4 ? '#4ade80' : '#38bdf8')));
+
+            game.ballsBowled++;
+            game.overLog.push(isOut ? 'W' : String(runs));
+            if (game.overLog.length > 6) game.overLog.shift();
+
+            if (isOut) {
+                game.wickets++;
+            } else {
+                game.runs += runs;
+                if (runs > 0) {
+                    game.wagonShots.push({
+                        angle: game.aimAngle,
+                        ratio: runs >= 6 ? 0.94 : (runs === 4 ? 0.8 : 0.48),
+                        runs
+                    });
+                }
+            }
+
+            updateBroadcastHUD();
+
+            setTimeout(() => {
+                checkMatchEndConditions();
+            }, 1550);
+        }
+
+        function checkMatchEndConditions() {
+            if (game.runs >= game.target) {
+                // TARGET CHASED!
+                profile.wins++;
+                profile.coins += 250;
+                writeSave();
+                audio.playCrowdRoar();
+                showResultPopup(
+                    '🏆',
+                    `${profile.handle.toUpperCase()} WINS!`,
+                    `Target of ${game.target} chased down in ${formatOvers(game.ballsBowled)} overs! (+250 🪙 Awarded)`
+                );
+                return;
+            }
+
+            if (game.ballsBowled >= game.maxBalls || game.wickets >= game.maxWickets) {
+                const diff = game.target - game.runs;
+                showResultPopup(
+                    '🏏',
+                    'INNINGS FINISHED',
+                    `You finished on ${game.runs}/${game.wickets} (${diff} runs short of Gary's ${game.target} target). Ready for a rematch?`
+                );
+                return;
+            }
+
+            setupNextDelivery();
+        }
+
+        function formatOvers(balls) {
+            return `${Math.floor(balls / 6)}.${balls % 6}`;
+        }
+
+        function updateBroadcastHUD() {
+            document.getElementById('hudLeftName').textContent = profile.handle;
+            document.getElementById('hudTotalRuns').textContent = game.runs;
+            document.getElementById('hudTargetRuns').textContent = game.target;
+
+            const need = Math.max(0, game.target - game.runs);
+            const remBalls = Math.max(0, game.maxBalls - game.ballsBowled);
+            document.getElementById('hudNeedEquation').textContent = `NEED ${need} IN ${remBalls} BALLS (${formatOvers(game.ballsBowled)} OV)`;
+
+            const tl = document.getElementById('hudOverTimeline');
+            tl.innerHTML = '';
+            game.overLog.forEach(item => {
+                const badge = document.createElement('span');
+                const isW = item === 'W';
+                const isB = Number(item) >= 4;
+                badge.className = `px-1.5 py-0.2 rounded font-orbitron text-[9px] font-bold ${
+                    isW ? 'bg-rose-600 text-white' : (isB ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-200')
+                }`;
+                badge.textContent = item;
+                tl.appendChild(badge);
+            });
+        }
+
+        function syncLobbyUI() {
+            document.getElementById('lobbyCoins').textContent = profile.coins.toLocaleString();
+            document.getElementById('lobbyWins').textContent = profile.wins;
+            document.getElementById('lobbyMaxSix').textContent = profile.maxSix;
+            document.getElementById('lobbyPlayerName').textContent = profile.handle;
+            document.getElementById('lobbyJerseyTag').textContent = `${profile.shirtName} #${profile.shirtNum}`;
+            document.getElementById('ribbonCamText').textContent = profile.camPreset === 'SCREENSHOT' ? 'CLOSE' : profile.camPreset;
+        }
+
+        function showShotCallout(text, color) {
+            const box = document.getElementById('shotCalloutBox');
+            box.innerHTML = `<div class="shot-callout-anim tv-panel px-5 py-1.5 rounded-2xl border-2 font-orbitron text-lg sm:text-2xl font-black tracking-wide shadow-2xl" style="color:${color}; border-color:${color}">${text}</div>`;
+        }
+
+        function showResultPopup(emoji, title, desc) {
+            hasActiveMatch = false;
+            document.getElementById('resEmoji').textContent = emoji;
+            document.getElementById('resTitle').textContent = title;
+            document.getElementById('resDesc').textContent = desc;
+            document.getElementById('resultModal').classList.remove('hidden');
+            document.getElementById('resultModal').classList.add('flex');
+        }
+
+        // --- SWIPE-TO-HIT GESTURE CONTROLLER ON SCREEN ---
+        const swipeCanvas = document.getElementById('swipeOverlayCanvas');
+        const swipeCtx = swipeCanvas.getContext('2d');
+        let swipeStart = null;
+        let swipePoints = [];
+
+        function resizeSwipeCanvas() {
+            swipeCanvas.width = window.innerWidth;
+            swipeCanvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeSwipeCanvas);
+        resizeSwipeCanvas();
+
+        document.getElementById('webglViewport').addEventListener('pointerdown', (e) => {
+            if (isLobbyOpen) return;
+            audio.init();
+            swipeStart = { x: e.clientX, y: e.clientY, time: performance.now() };
+            swipePoints = [{ x: e.clientX, y: e.clientY }];
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!swipeStart || isLobbyOpen) return;
+            swipePoints.push({ x: e.clientX, y: e.clientY });
+            if (swipePoints.length > 16) swipePoints.shift();
+
+            // Render glowing white/gold swipe arc
+            swipeCtx.clearRect(0, 0, swipeCanvas.width, swipeCanvas.height);
+            if (swipePoints.length > 1) {
+                swipeCtx.save();
+                swipeCtx.strokeStyle = '#fbbf24';
+                swipeCtx.lineWidth = 5;
+                swipeCtx.lineCap = 'round';
+                swipeCtx.shadowColor = '#f97316';
+                swipeCtx.shadowBlur = 12;
+                swipeCtx.beginPath();
+                swipeCtx.moveTo(swipePoints[0].x, swipePoints[0].y);
+                for (let i = 1; i < swipePoints.length; i++) {
+                    swipeCtx.lineTo(swipePoints[i].x, swipePoints[i].y);
+                }
+                swipeCtx.stroke();
+                swipeCtx.restore();
+            }
+        });
+
+        window.addEventListener('pointerup', (e) => {
+            if (!swipeStart || isLobbyOpen) return;
+            const dx = e.clientX - swipeStart.x;
+            const dy = e.clientY - swipeStart.y;
+            const dist = Math.hypot(dx, dy);
+            swipeStart = null;
+            setTimeout(() => swipeCtx.clearRect(0, 0, swipeCanvas.width, swipeCanvas.height), 140);
+
+            if (dist > 24) {
+                // Map horizontal swipe to 360° shot aim angle & upward swipe to Lofted Six!
+                const aim = Math.max(-0.95, Math.min(0.95, (dx / (window.innerWidth * 0.35))));
+                setAimSector(aim);
+                const isLoftSwipe = dy < -35 || dist > 110;
+                triggerBatsmanSwing(isLoftSwipe);
+            }
+        });
+
+        function setAimSector(angleRad) {
+            game.aimAngle = angleRad;
+            document.querySelectorAll('.aim-btn').forEach(b => {
+                const active = Math.abs(Number(b.getAttribute('data-aim')) - angleRad) < 0.15;
+                b.classList.toggle('ring-2', active);
+                b.classList.toggle('ring-amber-400', active);
+            });
+        }
+
+        // --- UPPER-LEFT DRAG-TO-PULL RIBBON DRAWER ---
+        const leftRibbonDrawer = document.getElementById('leftRibbonDrawer');
+        const ribbonTray = document.getElementById('ribbonTray');
+        const ribbonPullTab = document.getElementById('ribbonPullTab');
+        const ribbonTabText = document.getElementById('ribbonTabText');
+        const ribbonBackdrop = document.getElementById('ribbonBackdrop');
+
+        let ribbonOpen = false;
+        let isDraggingRibbon = false;
+        let dragMoved = false;
+        let dragStartX = 0;
+        let dragStartTranslate = 0;
+        let currentDragTranslate = 0;
+
+        function getClosedOffset() {
+            return -(ribbonTray ? ribbonTray.offsetWidth : 315);
+        }
+
+        function setRibbonOpen(state) {
+            ribbonOpen = Boolean(state);
+            leftRibbonDrawer.classList.remove('dragging');
+            leftRibbonDrawer.style.transform = '';
+            leftRibbonDrawer.classList.toggle('open', ribbonOpen);
+            ribbonBackdrop.classList.toggle('active', ribbonOpen);
+            ribbonTabText.textContent = ribbonOpen ? 'HIDE' : 'PULL';
+        }
+
+        ribbonPullTab.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            audio.init();
+            isDraggingRibbon = true;
+            dragMoved = false;
+            dragStartX = e.clientX;
+            const closedOffset = getClosedOffset();
+            dragStartTranslate = ribbonOpen ? 0 : closedOffset;
+            currentDragTranslate = dragStartTranslate;
+            leftRibbonDrawer.classList.add('dragging');
+            if (ribbonPullTab.setPointerCapture) {
+                try { ribbonPullTab.setPointerCapture(e.pointerId); } catch (err) {}
+            }
+        });
+
+        ribbonPullTab.addEventListener('pointermove', (e) => {
+            if (!isDraggingRibbon) return;
+            const dx = e.clientX - dragStartX;
+            if (Math.abs(dx) > 5) dragMoved = true;
+            const closedOffset = getClosedOffset();
+            currentDragTranslate = Math.max(closedOffset, Math.min(0, dragStartTranslate + dx));
+            leftRibbonDrawer.style.transform = `translateX(${currentDragTranslate}px)`;
+        });
+
+        function finishRibbonDrag() {
+            if (!isDraggingRibbon) return;
+            isDraggingRibbon = false;
+            if (!dragMoved) {
+                audio.playPitchBounce();
+                setRibbonOpen(!ribbonOpen);
+                return;
+            }
+            const closedOffset = getClosedOffset();
+            const threshold = ribbonOpen ? closedOffset * 0.28 : closedOffset * 0.68;
+            setRibbonOpen(currentDragTranslate > threshold);
+        }
+        ribbonPullTab.addEventListener('pointerup', finishRibbonDrag);
+        ribbonPullTab.addEventListener('pointercancel', finishRibbonDrag);
+        ribbonBackdrop.addEventListener('pointerdown', () => setRibbonOpen(false));
+
+        // --- UI & BUTTON BINDINGS ---
+        document.querySelectorAll('.aim-btn').forEach(btn => {
+            btn.addEventListener('click', () => setAimSector(Number(btn.getAttribute('data-aim'))));
+        });
+
+        document.getElementById('btnGroundStroke').addEventListener('click', () => triggerBatsmanSwing(false));
+        document.getElementById('btnLoftStroke').addEventListener('click', () => triggerBatsmanSwing(true));
+
+        window.addEventListener('keydown', (e) => {
+            if (isLobbyOpen) return;
+            if (e.code === 'KeyA' || e.code === 'ArrowLeft') setAimSector(Math.max(-0.88, game.aimAngle - 0.44));
+            if (e.code === 'KeyD' || e.code === 'ArrowRight') setAimSector(Math.min(0.88, game.aimAngle + 0.44));
+            if (e.code === 'KeyJ') triggerBatsmanSwing(false);
+            if (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') {
+                e.preventDefault();
+                triggerBatsmanSwing(true);
+            }
+        });
+
+        document.querySelectorAll('.tour-mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                audio.init();
+                audio.playPitchBounce();
+                profile.mode = btn.getAttribute('data-mode');
+                document.getElementById('lobbyTargetPreview').textContent =
+                    profile.mode === 'SCREENSHOT_36' ? '36 RUNS' : (profile.mode === 'SUPER_OVER' ? '20 RUNS' : '42 RUNS');
+                document.querySelectorAll('.tour-mode-btn').forEach(b => {
+                    const active = b.getAttribute('data-mode') === profile.mode;
+                    b.className = active
+                        ? 'tour-mode-btn p-2.5 rounded-xl border-2 border-emerald-400 bg-emerald-950/40 text-left'
+                        : 'tour-mode-btn p-2.5 rounded-xl border border-slate-700 bg-slate-900/70 text-left';
+                });
+            });
+        });
+
+        function openLobby() {
+            isLobbyOpen = true;
+            setRibbonOpen(false);
+            document.getElementById('homeLobby').classList.remove('hidden');
+            document.getElementById('homeLobby').classList.add('flex');
+            const res = document.getElementById('btnResumeMatch');
+            res.classList.toggle('hidden', !hasActiveMatch);
+            res.classList.toggle('flex', hasActiveMatch);
+            syncLobbyUI();
+        }
+
+        document.getElementById('btnStartTourMatch').addEventListener('click', () => {
+            audio.init();
+            isLobbyOpen = false;
+            document.getElementById('homeLobby').classList.add('hidden');
+            document.getElementById('homeLobby').classList.remove('flex');
+            startWorldTourMatch();
+        });
+
+        document.getElementById('btnResumeMatch').addEventListener('click', () => {
+            audio.init();
+            isLobbyOpen = false;
+            document.getElementById('homeLobby').classList.add('hidden');
+            document.getElementById('homeLobby').classList.remove('flex');
+            setupNextDelivery();
+        });
+
+        document.getElementById('btnRibbonHome').addEventListener('click', openLobby);
+        document.getElementById('btnRibbonJersey').addEventListener('click', openLobby);
+
+        document.getElementById('btnRibbonCam').addEventListener('click', () => {
+            const list = ['SCREENSHOT', 'WIDE', 'AERIAL'];
+            profile.camPreset = list[(list.indexOf(profile.camPreset) + 1) % list.length];
+            writeSave();
+        });
+
+        document.getElementById('btnRibbonAudio').addEventListener('click', () => {
+            audio.init();
+            const m = audio.toggleMute();
+            document.getElementById('ribbonAudioIcon').textContent = m ? '🔇' : '🔊';
+            document.getElementById('ribbonAudioText').textContent = m ? 'MUTED' : 'SOUND';
+        });
+
+        document.getElementById('btnRibbonWagon').addEventListener('click', () => {
+            setRibbonOpen(false);
+            const wc = document.getElementById('wagonCanvas');
+            const g = wc.getContext('2d');
+            const r = wc.width / 2;
+            g.clearRect(0, 0, wc.width, wc.height);
+            g.fillStyle = '#2e7d32';
+            g.beginPath();
+            g.arc(r, r, r - 4, 0, Math.PI * 2);
+            g.fill();
+            g.fillStyle = '#b07b48';
+            g.fillRect(r - 4, r - 15, 8, 30);
+
+            game.wagonShots.forEach(s => {
+                const len = (r - 10) * s.ratio;
+                g.strokeStyle = s.runs >= 6 ? '#fbbf24' : (s.runs === 4 ? '#4ade80' : '#38bdf8');
+                g.lineWidth = 2.5;
+                g.beginPath();
+                g.moveTo(r, r + 8);
+                g.lineTo(r + Math.sin(s.angle) * len, r - Math.cos(s.angle) * len);
+                g.stroke();
+            });
+            document.getElementById('wagonModal').classList.remove('hidden');
+            document.getElementById('wagonModal').classList.add('flex');
+        });
+
+        document.getElementById('btnCloseWagon').addEventListener('click', () => {
+            document.getElementById('wagonModal').classList.add('hidden');
+            document.getElementById('wagonModal').classList.remove('flex');
+        });
+
+        document.getElementById('btnRibbonRestart').addEventListener('click', () => {
+            setRibbonOpen(false);
+            isLobbyOpen = false;
+            startWorldTourMatch();
+        });
+
+        document.getElementById('btnResLobby').addEventListener('click', () => {
+            document.getElementById('resultModal').classList.add('hidden');
+            document.getElementById('resultModal').classList.remove('flex');
+            openLobby();
+        });
+
+        document.getElementById('btnResNext').addEventListener('click', () => {
+            document.getElementById('resultModal').classList.add('hidden');
+            document.getElementById('resultModal').classList.remove('flex');
+            startWorldTourMatch();
+        });
+
+        window.addEventListener('resize', () => {
+            if (!camera || !renderer) return;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- MAIN ANIMATION LOOP ---
+        let prevTime = performance.now();
+        function animate(now) {
+            const dt = Math.min(0.05, (now - prevTime) / 1000);
+            prevTime = now;
+
+            updateSimulation(dt);
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+            requestAnimationFrame(animate);
+        }
+
+        window.onload = function () {
+            initThreeScene();
+            startWorldTourMatch(); // Pre-stage the exact 23 / Target 36 scene in the 3D background!
+            openLobby();
+            requestAnimationFrame(animate);
+        };
+    </script>
+</body>
+</html>
